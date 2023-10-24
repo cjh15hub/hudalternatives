@@ -24,19 +24,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.joml.Matrix4f;
 
 public class MinimalModernOverlay {
-
     private static final ResourceLocation MINIMAL_MODERN = new ResourceLocation(Constants.MODID, "textures/minimal_modern.png");
-
-    private static final int spriteSheetTextureWidth = 256;
-    private static final int spriteSheetTextureHeight = 256;
-    private static final float maxHealth = 20f;
-    private static final float maxFoodLevel = 20f;
-    private static final int mainBackgroundSpriteHeight = 36;
-    private static final Dimensions healthSpriteDims = new Dimensions(74, 5);
-    private static final Dimensions goldenHealthSpriteDims = new Dimensions(74, 3);
-    private static final Dimensions hungerSpriteDims = new Dimensions(60, 3);
-    private static final Dimensions hungerSaturationSpriteDims = new Dimensions(60, 1);
-    private static final Dimensions drowningSprite = new Dimensions(30, 34);
 
     public static final IGuiOverlay HUD = new IGuiOverlay() {
         @Override
@@ -47,58 +35,107 @@ public class MinimalModernOverlay {
             final var screenDims = new Dimensions(screenWidth, screenHeight);
             SurvivalPlayerSnapshot playerSnapshot = new SurvivalPlayerSnapshot(player);
 
-            var mainScreenAnchor = getMainScreenAnchorPoint(screenDims);
-            renderBackgroundSprite(guiGraphics, mainScreenAnchor);
+            // Standard reference point for all gui elements
+            Vector2 mainScreenAnchor = getMainScreenAnchorPoint(screenDims, MM_Configuration.MainGuiDrawCorner());
+            var valueBarAnchorPoint = mainScreenAnchor;  // if separated, adjusted anchor point for value bars
+
+
+            // Main Elements and Value Bars Separated
+            if (MM_Configuration.SeparateValueBars() && MM_Configuration.ValueBarsDrawCorner() != MM_Configuration.MainGuiDrawCorner()) {
+                // Main GUI rendered left side
+                if (MM_Configuration.MainGuiDrawCorner() == 1 || MM_Configuration.MainGuiDrawCorner() == 3) {
+                    var adjustedX = mainScreenAnchor.x() + MM_Sprites.ValueBarsBackground.width() - (MM_Sprites.SmallHex.width() / 2) - 1;
+                    mainScreenAnchor = new Vector2(adjustedX, mainScreenAnchor.y());
+                }
+                // Adjust the value bars anchor point
+                valueBarAnchorPoint = getSeparatedValueBarsAnchorPoint(screenDims, MM_Configuration.ValueBarsDrawCorner());
+                renderValueBarsBackground(guiGraphics, valueBarAnchorPoint);
+            }
+            else {
+                // All Elements Together
+                renderValueBarsBackground(guiGraphics, mainScreenAnchor);
+            }
+
+            // Main GUI Elements
+            renderMainHex(guiGraphics, mainScreenAnchor);
             renderSmallHexes(guiGraphics, mainScreenAnchor);
             renderActiveItem(gui, guiGraphics, playerSnapshot, mainScreenAnchor);
             renderAdjacentItems(gui, guiGraphics, playerSnapshot, mainScreenAnchor);
 
-            renderHealthBar(guiGraphics, mainScreenAnchor, playerSnapshot.health, playerSnapshot.healthEffect);
-            renderGoldenHealthBar(guiGraphics, mainScreenAnchor, playerSnapshot.absorption);
-            renderFoodBar(guiGraphics, mainScreenAnchor, playerSnapshot.foodLevel, playerSnapshot.hungerEffect);
-            renderFoodSaturationBar(guiGraphics, mainScreenAnchor, playerSnapshot.saturation);
+            // Value Bars
+            renderHealthBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.health, playerSnapshot.maxHealth, playerSnapshot.healthEffect);
+            renderGoldenHealthBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.absorption);
+            renderFoodBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.foodLevel, playerSnapshot.maxFoodLevel, playerSnapshot.hungerEffect);
+            renderFoodSaturationBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.saturation, playerSnapshot.maxFoodLevel);
 
+            // Misc Survival
             renderDrowningBar(guiGraphics, mainScreenAnchor, playerSnapshot.drownPercentage);
-
             renderExperienceLevel(gui, guiGraphics, mainScreenAnchor, playerSnapshot.experienceLevel);
         }
 
     };
 
-    private static Vector2 getMainScreenAnchorPoint(Dimensions screen) {
-        final int spriteBottomYPadding = 20;
-        return new Vector2(20, screen.height() - mainBackgroundSpriteHeight - spriteBottomYPadding);
+    private static Vector2 getMainScreenAnchorPoint(Dimensions screen, int drawCorner) {
+        var leftX = 10 +MM_Configuration.MainGuiHorizontalPadding();
+        var rightX = screen.width() - MM_Sprites.LargeHex.width() - MM_Sprites.MainHealthBar.width() -2 -MM_Configuration.MainGuiHorizontalPadding();
+        var topY = 19 +MM_Configuration.MainGuiVerticalPadding();
+        var bottomY = screen.height() - MM_Sprites.LargeHex.height() - 19 -MM_Configuration.MainGuiVerticalPadding();
+
+        return switch(drawCorner) {
+            case 0 -> new Vector2(leftX, topY);     // top left
+            case 1 -> new Vector2(rightX, topY);    // top right
+            case 2 -> new Vector2(leftX, bottomY);  // bottom left
+            case 3 -> new Vector2(rightX, bottomY); // bottom right
+            default -> new Vector2(leftX, bottomY); // bottom left (default)
+        };
     }
 
-    private static void renderBackgroundSprite(GuiGraphics guiGraphics, Vector2 anchor) {
-        final int spriteSourceLocationX = 28;
-        final int spriteSourceLocationY = 207;
-        final int spriteWidth = 107;
+    private static Vector2 getSeparatedValueBarsAnchorPoint(Dimensions screen, int drawCorner) {
+        var leftX = 4 - MM_Sprites.LargeHex.width() +MM_Configuration.ValueBarsHorizontalPadding();
+        var rightX = screen.width() - MM_Sprites.LargeHex.width() - MM_Sprites.MainHealthBar.width() -2 -MM_Configuration.ValueBarsHorizontalPadding();
+        var topY = 19 - MM_Sprites.SmallHex.height() +MM_Configuration.ValueBarsVerticalPadding();
+        var bottomY = screen.height() - MM_Sprites.LargeHex.height() - 19 + MM_Sprites.SmallHex.height() -MM_Configuration.ValueBarsVerticalPadding();
 
+        return switch(drawCorner) {
+            case 0 -> new Vector2(leftX, topY);     // top left
+            case 1 -> new Vector2(rightX, topY);    // top right
+            case 2 -> new Vector2(leftX, bottomY);  // bottom left
+            case 3 -> new Vector2(rightX, bottomY); // bottom right
+            default -> new Vector2(leftX, bottomY); // bottom left (default)
+        };
+    }
+
+    private static void renderMainHex(GuiGraphics guiGraphics, Vector2 anchor) {
         guiGraphics.blit(
             MINIMAL_MODERN,
             anchor.x(),
             anchor.y(),
-            spriteSourceLocationX, spriteSourceLocationY,
-            spriteWidth, mainBackgroundSpriteHeight,
-            spriteSheetTextureWidth, spriteSheetTextureHeight
+            MM_Sprites.LargeHex.x(), MM_Sprites.LargeHex.y(),
+            MM_Sprites.LargeHex.width(), MM_Sprites.LargeHex.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+        );
+    }
+
+    private static void renderValueBarsBackground(GuiGraphics guiGraphics, Vector2 anchor) {
+        guiGraphics.blit(
+            MINIMAL_MODERN,
+            anchor.x() + 31,
+            anchor.y() + 11,
+            MM_Sprites.ValueBarsBackground.x(), MM_Sprites.ValueBarsBackground.y(),
+            MM_Sprites.ValueBarsBackground.width(), MM_Sprites.ValueBarsBackground.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
         );
     }
 
     private static void renderSmallHexes(GuiGraphics guiGraphics, Vector2 anchor) {
-        final int spriteSourceLocationX = 4;
-        final int spriteSourceLocationY = 194;
-        final int spriteWidth = 22;
-        final int spriteHeight = 24;
-
         // top left
         guiGraphics.blit(
             MINIMAL_MODERN,
             anchor.x() - 9,
             anchor.y() - 18,
-            spriteSourceLocationX, spriteSourceLocationY,
-            spriteWidth, spriteHeight,
-            spriteSheetTextureWidth, spriteSheetTextureHeight
+            MM_Sprites.SmallHex.x(), MM_Sprites.SmallHex.y(),
+            MM_Sprites.SmallHex.width(), MM_Sprites.SmallHex.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
         );
 
         // bottom right
@@ -106,9 +143,9 @@ public class MinimalModernOverlay {
             MINIMAL_MODERN,
             anchor.x() + 20,
             anchor.y() + 30,
-            spriteSourceLocationX, spriteSourceLocationY,
-            spriteWidth, spriteHeight,
-            spriteSheetTextureWidth, spriteSheetTextureHeight
+            MM_Sprites.SmallHex.x(), MM_Sprites.SmallHex.y(),
+            MM_Sprites.SmallHex.width(), MM_Sprites.SmallHex.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
         );
     }
 
@@ -138,92 +175,79 @@ public class MinimalModernOverlay {
         guiGraphics.renderItemDecorations(gui.getFont(), rightItem, mainAnchor.x() + 23, mainAnchor.y() + 34);
     }
 
-    private static void renderHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float health, SurvivalPlayerSnapshot.Effect healthState) {
-        final int spriteSourceLocationX = 60;
-        // 186, 180, 174
-        final int spriteSourceLocationY = (healthState == SurvivalPlayerSnapshot.Effect.WITHERED) ? 174
-            : (healthState == SurvivalPlayerSnapshot.Effect.POISONED) ? 180
-            : 186;
+    private static void renderHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float health, float maxHealth, SurvivalPlayerSnapshot.Effect healthState) {
+        var healthBarSprite = (healthState == SurvivalPlayerSnapshot.Effect.WITHERED) ? MM_Sprites.WitheredHealthBar
+            : (healthState == SurvivalPlayerSnapshot.Effect.POISONED) ? MM_Sprites.PoisonedHealthBar
+            : MM_Sprites.MainHealthBar;
 
-        final int renderedWidth = ((int)(healthSpriteDims.width() * (health / maxHealth)));
+        final int renderedWidth = ((int)(healthBarSprite.width() * (health / maxHealth)));
 
         guiGraphics.blit(
             MINIMAL_MODERN,
             mainAnchor.x() + 32,
             mainAnchor.y() + 12,
-            spriteSourceLocationX, spriteSourceLocationY,
-            renderedWidth, healthSpriteDims.height(),
-            spriteSheetTextureWidth, spriteSheetTextureHeight
+            healthBarSprite.x(), healthBarSprite.y(),
+            renderedWidth, healthBarSprite.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
         );
     }
 
     private static void renderGoldenHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float absorption) {
-        final int spriteSourceLocationX = 60;
-        final int spriteSourceLocationY = 192;
-
-        // float maxAbsorption = 16f;
         float maxAbsorption = 20f;
-
-        final int renderedWidth = ((int)(goldenHealthSpriteDims.width() * (absorption / maxAbsorption)));
+        final int renderedWidth = ((int)(MM_Sprites.GoldenHealthBar.width() * (absorption / maxAbsorption)));
 
         guiGraphics.blit(
             MINIMAL_MODERN,
             mainAnchor.x() + 32,
             mainAnchor.y() + 14,
-            spriteSourceLocationX, spriteSourceLocationY,
-            renderedWidth, goldenHealthSpriteDims.height(),
-            spriteSheetTextureWidth, spriteSheetTextureHeight
+            MM_Sprites.GoldenHealthBar.x(), MM_Sprites.GoldenHealthBar.y(),
+            renderedWidth, MM_Sprites.GoldenHealthBar.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
         );
     }
 
-    private static void renderFoodBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float foodValue, SurvivalPlayerSnapshot.Effect hungerState) {
-        final int spriteSourceLocationX = 60;
-        // 186, 180, 174
-        final int spriteSourceLocationY = (hungerState == SurvivalPlayerSnapshot.Effect.HUNGERED) ? 200 : 196;
+    private static void renderFoodBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float foodLevel, float maxFoodLevel, SurvivalPlayerSnapshot.Effect hungerState) {
+        var hungerBarSprite = (hungerState == SurvivalPlayerSnapshot.Effect.HUNGERED)
+            ? MM_Sprites.PoisonedHungerBar
+            : MM_Sprites.MainHungerBar;
 
-        final int renderedWidth = ((int)(hungerSpriteDims.width() * (foodValue / maxFoodLevel)));
+        final int renderedWidth = ((int)(hungerBarSprite.width() * (foodLevel / maxFoodLevel)));
 
         guiGraphics.blit(
             MINIMAL_MODERN,
             mainAnchor.x() + 32,
             mainAnchor.y() + 20,
-            spriteSourceLocationX, spriteSourceLocationY,
-            renderedWidth, hungerSpriteDims.height(),
-            spriteSheetTextureWidth, spriteSheetTextureHeight
+            hungerBarSprite.x(), hungerBarSprite.y(),
+            renderedWidth, hungerBarSprite.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
         );
     }
 
-    private static void renderFoodSaturationBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float saturation) {
-        final int spriteSourceLocationX = 60;
-        final int spriteSourceLocationY = 204;
-
-        final int renderedWidth = ((int)(hungerSaturationSpriteDims.width() * (saturation / maxFoodLevel)));
+    private static void renderFoodSaturationBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float saturation, float maxFoodLevel) {
+        final int renderedWidth = ((int)(MM_Sprites.SaturationHungerBar.width() * (saturation / maxFoodLevel)));
 
         guiGraphics.blit(
             MINIMAL_MODERN,
             mainAnchor.x() + 32,
             mainAnchor.y() + 24,
-            spriteSourceLocationX, spriteSourceLocationY,
-            renderedWidth, hungerSaturationSpriteDims.height(),
-            spriteSheetTextureWidth, spriteSheetTextureHeight
+            MM_Sprites.SaturationHungerBar.x(), MM_Sprites.SaturationHungerBar.y(),
+            renderedWidth, MM_Sprites.SaturationHungerBar.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
         );
     }
 
     private static void renderDrowningBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float drowningPercent) {
-        final int spriteSourceLocationX = 29;
-        final int spriteSourceLocationY = 172;
-
-        int removedSpriteHeight = drowningSprite.height() - ((int)(drowningSprite.height() * drowningPercent ));
-        int spriteStartY = removedSpriteHeight + spriteSourceLocationY;
-        int spriteHeightRemaining = drowningSprite.height() - removedSpriteHeight;
+        int removedSpriteHeight = MM_Sprites.DrowingHexSprite.height() - ((int)(MM_Sprites.DrowingHexSprite.height() * drowningPercent ));
+        int spriteStartY = removedSpriteHeight + MM_Sprites.DrowingHexSprite.y();
+        int spriteHeightRemaining = MM_Sprites.DrowingHexSprite.height() - removedSpriteHeight;
 
         guiGraphics.blit(
             MINIMAL_MODERN,
             mainAnchor.x() + 1,
             mainAnchor.y() + 1 + removedSpriteHeight,
-            spriteSourceLocationX, spriteStartY,
-            drowningSprite.width(), spriteHeightRemaining,
-            spriteSheetTextureWidth, spriteSheetTextureHeight
+            MM_Sprites.DrowingHexSprite.x(), spriteStartY,
+            MM_Sprites.DrowingHexSprite.width(), spriteHeightRemaining,
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
         );
     }
 

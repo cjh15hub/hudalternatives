@@ -1,6 +1,7 @@
 package com.dudenduke.hudalternatives.minimalmodern;
 
 import com.dudenduke.hudalternatives.utils.SurvivalPlayerSnapshot;
+import com.dudenduke.hudalternatives.utils.WeaponUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -37,7 +38,7 @@ public class MM_KeyInputHandlers {
             player.getInventory().selected = nextWeaponIndex;
             player.playSound(SoundEvents.IRON_TRAPDOOR_CLOSE, 0.6f, 1.5f);
         }
-        else if (!SurvivalPlayerSnapshot.isMeleeWeapon(playerSnapshot.mainHandItem)) {
+        else if (!WeaponUtils.isMeleeWeapon(playerSnapshot.mainHandItem)) {
             player.playSound(SoundEvents.ITEM_FRAME_PLACE, 0.6f, 0.5f);
         }
     }
@@ -52,7 +53,7 @@ public class MM_KeyInputHandlers {
             player.getInventory().selected = nextWeaponIndex;
             player.playSound(SoundEvents.WOOL_BREAK, 0.6f, 1.5f);
         }
-        else if (!SurvivalPlayerSnapshot.isRangedWeapon(playerSnapshot.mainHandItem)) {
+        else if (!WeaponUtils.isRangedWeapon(playerSnapshot.mainHandItem)) {
             player.playSound(SoundEvents.ITEM_FRAME_PLACE, 0.6f, 0.5f);
         }
     }

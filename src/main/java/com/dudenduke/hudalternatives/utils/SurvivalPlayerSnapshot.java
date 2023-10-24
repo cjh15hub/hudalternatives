@@ -23,8 +23,10 @@ public class SurvivalPlayerSnapshot {
         public final int experienceLevel;
         public final int totalExperience;
         public final float health;
+        public final float maxHealth;
         public final float absorption;
         public final float foodLevel;
+        public final float maxFoodLevel;
         public final float saturation;
 
         public final Effect healthEffect;
@@ -44,9 +46,11 @@ public class SurvivalPlayerSnapshot {
             experienceLevel = player.experienceLevel;
             totalExperience = player.totalExperience;
 
+            maxHealth = player.getMaxHealth();
             health = player.getHealth();
             absorption = player.getAbsorptionAmount();
             final FoodData foodData = player.getFoodData();
+            maxFoodLevel = 20f;
             foodLevel = foodData.getFoodLevel();
             saturation = foodData.getSaturationLevel();
 
@@ -140,10 +144,10 @@ public class SurvivalPlayerSnapshot {
 
         int startingIndex = 0;
         if (weaponType == WeaponType.MELEE) {
-            startingIndex = isMeleeWeapon(mainHandItem) ? selectedHotbarIndex + 1 : 0;
+            startingIndex = WeaponUtils.isMeleeWeapon(mainHandItem) ? selectedHotbarIndex + 1 : 0;
         }
         else if (weaponType == WeaponType.RANGED) {
-            startingIndex = isRangedWeapon(mainHandItem) ? selectedHotbarIndex + 1 : 0;
+            startingIndex = WeaponUtils.isRangedWeapon(mainHandItem) ? selectedHotbarIndex + 1 : 0;
         }
         else {
             // TODO: Not implemented
@@ -153,11 +157,11 @@ public class SurvivalPlayerSnapshot {
         for (int i = 0; i < hotbar.length; i++) {
             int nextIndex = Math.floorMod(startingIndex + i, 9);
 
-            if (weaponType == WeaponType.MELEE && isMeleeWeapon(hotbar[nextIndex])) {
+            if (weaponType == WeaponType.MELEE && WeaponUtils.isMeleeWeapon(hotbar[nextIndex])) {
                 nextWeaponIndex = nextIndex;
                 break;
             }
-            else if (weaponType == WeaponType.RANGED && isRangedWeapon(hotbar[nextIndex])) {
+            else if (weaponType == WeaponType.RANGED && WeaponUtils.isRangedWeapon(hotbar[nextIndex])) {
                 nextWeaponIndex = nextIndex;
                 break;
             }
@@ -166,12 +170,5 @@ public class SurvivalPlayerSnapshot {
         return nextWeaponIndex;
     }
 
-    public static boolean isMeleeWeapon(ItemStack itemStack) {
-        return (itemStack.is(ItemTags.SWORDS) || itemStack.is(ItemTags.AXES) || itemStack.getItem() instanceof TridentItem);
-    }
 
-    public static boolean isRangedWeapon(ItemStack itemStack) {
-        final var item = itemStack.getItem();
-        return (item instanceof BowItem || item instanceof CrossbowItem);
-    }
 }
