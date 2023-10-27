@@ -1,4 +1,4 @@
-package com.dudenduke.hudalternatives.core;
+package com.dudenduke.hudalternatives.common;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.player.LocalPlayer;

@@ -6,7 +6,6 @@ plugins {
 
 version = mod_version + "-mc" + minecraft_version
 group = mod_group_id
-archivesBaseName = mod_id
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -27,7 +26,7 @@ repositories {
 }
 
 var dependencyProjects = [
-        project(":core")
+        project(":common")
 ]
 
 dependencies {
@@ -65,7 +64,8 @@ test {
 }
 
 jar {
-    from fileTree(dir: '../core/build/libs/', include: 'core-*.jar').collect { zipTree(it) }
+    archivesBaseName = mod_group_name + "-" + mod_id
+    from fileTree(dir: '../common/build/libs/', include: '*.jar').collect { zipTree(it) }
     exclude '**/*.psd'
 }
 

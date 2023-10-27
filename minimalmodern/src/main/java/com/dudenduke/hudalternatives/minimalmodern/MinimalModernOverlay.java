@@ -1,10 +1,10 @@
 package com.dudenduke.hudalternatives.minimalmodern;
 
-import com.dudenduke.hudalternatives.core.Dimensions;
-import com.dudenduke.hudalternatives.core.LivingVehicleType;
-import com.dudenduke.hudalternatives.core.PlayerMountData;
-import com.dudenduke.hudalternatives.core.SurvivalPlayerSnapshot;
-import com.dudenduke.hudalternatives.core.Vector2;
+import com.dudenduke.hudalternatives.common.Dimensions;
+import com.dudenduke.hudalternatives.common.LivingVehicleType;
+import com.dudenduke.hudalternatives.common.PlayerMountData;
+import com.dudenduke.hudalternatives.common.SurvivalPlayerSnapshot;
+import com.dudenduke.hudalternatives.common.Vector2;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;

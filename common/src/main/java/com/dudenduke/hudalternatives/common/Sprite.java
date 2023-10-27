@@ -1,4 +1,4 @@
-package com.dudenduke.hudalternatives.core;
+package com.dudenduke.hudalternatives.common;
 
 public class Sprite {
 

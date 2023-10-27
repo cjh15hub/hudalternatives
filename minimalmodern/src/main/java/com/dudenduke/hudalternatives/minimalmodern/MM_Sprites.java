@@ -1,7 +1,7 @@
 package com.dudenduke.hudalternatives.minimalmodern;
-import com.dudenduke.hudalternatives.core.Dimensions;
-import com.dudenduke.hudalternatives.core.Sprite;
-import com.dudenduke.hudalternatives.core.Vector2;
+import com.dudenduke.hudalternatives.common.Dimensions;
+import com.dudenduke.hudalternatives.common.Sprite;
+import com.dudenduke.hudalternatives.common.Vector2;
 
 public class MM_Sprites {
 

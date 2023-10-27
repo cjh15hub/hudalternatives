@@ -1,7 +1,7 @@
 package com.dudenduke.hudalternatives.minimalmodern;
 
-import com.dudenduke.hudalternatives.core.SurvivalPlayerSnapshot;
-import com.dudenduke.hudalternatives.core.WeaponUtils;
+import com.dudenduke.hudalternatives.common.SurvivalPlayerSnapshot;
+import com.dudenduke.hudalternatives.common.WeaponUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.sounds.SoundEvents;

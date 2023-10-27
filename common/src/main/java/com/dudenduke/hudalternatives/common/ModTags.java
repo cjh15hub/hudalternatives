@@ -1,4 +1,4 @@
-package com.dudenduke.hudalternatives.core;
+package com.dudenduke.hudalternatives.common;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;

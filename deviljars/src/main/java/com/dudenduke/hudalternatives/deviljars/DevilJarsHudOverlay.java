@@ -1,8 +1,8 @@
 package com.dudenduke.hudalternatives.deviljars;
 
-import com.dudenduke.hudalternatives.core.Dimensions;
-import com.dudenduke.hudalternatives.core.SurvivalPlayerSnapshot;
-import com.dudenduke.hudalternatives.core.Vector2;
+import com.dudenduke.hudalternatives.common.Dimensions;
+import com.dudenduke.hudalternatives.common.SurvivalPlayerSnapshot;
+import com.dudenduke.hudalternatives.common.Vector2;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
