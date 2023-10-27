@@ -21,10 +21,14 @@ repositories {
 
     // If you have mod jar dependencies in ./libs, you can declare them as a repository like so.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:flat_dir_resolver
-     flatDir {
-         dir '../core/build/libs'
-     }
+    //  flatDir {
+    //      dir 'libs'
+    //  }
 }
+
+var dependencyProjects = [
+        project(":core")
+]
 
 dependencies {
     // Specify the version of Minecraft to use.
@@ -49,10 +53,11 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
+    dependencyProjects.forEach {implementation it}
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
     testImplementation 'org.assertj:assertj-core:3.21.0'
-    minecraftLibrary fg.deobf('com.dudenduke.hudalternatives:core:1.0')
 }
 
 test {
@@ -108,7 +113,7 @@ minecraft {
     runs {
         // applies to all the run configs below
         configureEach {
-            workingDirectory project.file('run')
+            workingDirectory project.file('../run')
 
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
@@ -122,41 +127,25 @@ minecraft {
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             property 'forge.logging.console.level', 'debug'
 
-            mods {
-                "${mod_id}" {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client {
-            workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             // property 'forge.enabledGameTestNamespaces', mod_id
 
             mods {
                 "${mod_id}" {
                     source sourceSets.main
+                    for (p in dependencyProjects) {
+                        source p.sourceSets.main
+                    }
                 }
             }
         }
 
+        client {
+
+        }
+
         server {
-            workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            // property 'forge.enabledGameTestNamespaces', mod_id
             args '--nogui'
-
-            mods {
-                "${mod_id}" {
-                    source sourceSets.main
-                }
-            }
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
@@ -167,20 +156,8 @@ minecraft {
         }
 
         data {
-            workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
-
-            property 'forge.logging.console.level', 'debug'
-
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
             args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-
-            mods {
-                "${mod_id}" {
-                    source sourceSets.main
-                }
-            }
         }
     }
 }
