@@ -24,4 +24,15 @@ public class MM_Sprites {
     public static Sprite MainHungerBar = new Sprite(new Vector2(60, 196), hungerSpriteDims);
     public static Sprite PoisonedHungerBar = new Sprite(new Vector2(60, 200), hungerSpriteDims);
     public static Sprite SaturationHungerBar = new Sprite(60, 204, hungerSpriteDims.width(), 1);
+
+
+    public static Sprite Horse_Silhouette = new Sprite(2, 23, 19, 20);
+    public static Sprite Horse = new Sprite(2, 2, 19, 20);
+    public static Sprite Donkey = new Sprite(24, 2, 19, 20);
+    public static Sprite Pig = new Sprite(47, 2, 19, 20);
+    public static Sprite Camel = new Sprite(69, 2, 20, 21);
+    public static Sprite Skeleton_Horse = new Sprite(93, 2, 19, 20);
+    public static Sprite Strider = new Sprite(115, 2, 20, 20);
+    public static Sprite MountHealthBackground = new Sprite(59, 153, 59, 5);
+    public static Sprite MountHealthBar = new Sprite(120, 154, 57, 3);
 }
