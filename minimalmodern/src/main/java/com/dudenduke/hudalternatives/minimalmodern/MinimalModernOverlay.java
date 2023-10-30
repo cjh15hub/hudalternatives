@@ -3,6 +3,7 @@ package com.dudenduke.hudalternatives.minimalmodern;
 import com.dudenduke.hudalternatives.common.Dimensions;
 import com.dudenduke.hudalternatives.common.LivingVehicleType;
 import com.dudenduke.hudalternatives.common.PlayerMountData;
+import com.dudenduke.hudalternatives.common.Sprite;
 import com.dudenduke.hudalternatives.common.SurvivalPlayerSnapshot;
 import com.dudenduke.hudalternatives.common.Vector2;
 import com.mojang.blaze3d.platform.Lighting;
@@ -127,47 +128,19 @@ public class MinimalModernOverlay {
     }
 
     private static void renderMainHex(GuiGraphics guiGraphics, Vector2 anchor) {
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x(),
-            anchor.y(),
-            MM_Sprites.LargeHex.x(), MM_Sprites.LargeHex.y(),
-            MM_Sprites.LargeHex.width(), MM_Sprites.LargeHex.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderSprite(guiGraphics, anchor.x(), anchor.y(), MM_Sprites.LargeHex);
     }
 
     private static void renderValueBarsBackground(GuiGraphics guiGraphics, Vector2 anchor) {
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x() + 31,
-            anchor.y() + 11,
-            MM_Sprites.ValueBarsBackground.x(), MM_Sprites.ValueBarsBackground.y(),
-            MM_Sprites.ValueBarsBackground.width(), MM_Sprites.ValueBarsBackground.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderSprite(guiGraphics, anchor.x() + 31, anchor.y() + 11, MM_Sprites.ValueBarsBackground);
     }
 
     private static void renderHotbarHexes(GuiGraphics guiGraphics, Vector2 anchor) {
         // top left
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x() - 9,
-            anchor.y() - 18,
-            MM_Sprites.SmallHex.x(), MM_Sprites.SmallHex.y(),
-            MM_Sprites.SmallHex.width(), MM_Sprites.SmallHex.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderSprite(guiGraphics, anchor.x() - 9, anchor.y() - 18, MM_Sprites.SmallHex);
 
         // bottom right
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x() + 20,
-            anchor.y() + 30,
-            MM_Sprites.SmallHex.x(), MM_Sprites.SmallHex.y(),
-            MM_Sprites.SmallHex.width(), MM_Sprites.SmallHex.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderSprite(guiGraphics, anchor.x() + 20, anchor.y() + 30, MM_Sprites.SmallHex);
     }
 
     private static void renderExperienceLevel(ForgeGui gui, GuiGraphics guiGraphics, Vector2 mainAnchor, int experienceLevel) {
@@ -201,30 +174,12 @@ public class MinimalModernOverlay {
             : (healthState == SurvivalPlayerSnapshot.Effect.POISONED) ? MM_Sprites.PoisonedHealthBar
             : MM_Sprites.MainHealthBar;
 
-        final int renderedWidth = ((int)(healthBarSprite.width() * (health / maxHealth)));
-
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            mainAnchor.x() + 32,
-            mainAnchor.y() + 12,
-            healthBarSprite.x(), healthBarSprite.y(),
-            renderedWidth, healthBarSprite.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderHorizontalBar(guiGraphics, mainAnchor.x() + 32, mainAnchor.y() + 12, healthBarSprite, health, maxHealth);
     }
 
     private static void renderGoldenHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float absorption) {
         float maxAbsorption = 20f;
-        final int renderedWidth = ((int)(MM_Sprites.GoldenHealthBar.width() * (absorption / maxAbsorption)));
-
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            mainAnchor.x() + 32,
-            mainAnchor.y() + 14,
-            MM_Sprites.GoldenHealthBar.x(), MM_Sprites.GoldenHealthBar.y(),
-            renderedWidth, MM_Sprites.GoldenHealthBar.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderHorizontalBar(guiGraphics, mainAnchor.x() + 32, mainAnchor.y() + 14, MM_Sprites.GoldenHealthBar, absorption, maxAbsorption);
     }
 
     private static void renderFoodBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float foodLevel, float maxFoodLevel, SurvivalPlayerSnapshot.Effect hungerState) {
@@ -232,29 +187,11 @@ public class MinimalModernOverlay {
             ? MM_Sprites.PoisonedHungerBar
             : MM_Sprites.MainHungerBar;
 
-        final int renderedWidth = ((int)(hungerBarSprite.width() * (foodLevel / maxFoodLevel)));
-
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            mainAnchor.x() + 32,
-            mainAnchor.y() + 20,
-            hungerBarSprite.x(), hungerBarSprite.y(),
-            renderedWidth, hungerBarSprite.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderHorizontalBar(guiGraphics, mainAnchor.x() + 32, mainAnchor.y() + 20, hungerBarSprite, foodLevel, maxFoodLevel);
     }
 
     private static void renderFoodSaturationBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float saturation, float maxFoodLevel) {
-        final int renderedWidth = ((int)(MM_Sprites.SaturationHungerBar.width() * (saturation / maxFoodLevel)));
-
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            mainAnchor.x() + 32,
-            mainAnchor.y() + 24,
-            MM_Sprites.SaturationHungerBar.x(), MM_Sprites.SaturationHungerBar.y(),
-            renderedWidth, MM_Sprites.SaturationHungerBar.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderHorizontalBar(guiGraphics, mainAnchor.x() + 32, mainAnchor.y() + 24, MM_Sprites.SaturationHungerBar, saturation, maxFoodLevel);
     }
 
     private static void renderDrowningBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float drowningPercent) {
@@ -275,14 +212,7 @@ public class MinimalModernOverlay {
 
     private static void renderMountHex(GuiGraphics guiGraphics, Vector2 anchor, LivingVehicleType mountType) {
         // top right
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x() + 19,
-            anchor.y() - 18,
-            MM_Sprites.SmallHex.x(), MM_Sprites.SmallHex.y(),
-            MM_Sprites.SmallHex.width(), MM_Sprites.SmallHex.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderSprite(guiGraphics, anchor.x() + 19, anchor.y() - 18, MM_Sprites.SmallHex);
 
         var mountSprite = switch (mountType) {
             case Horse -> MM_Sprites.Horse;
@@ -296,14 +226,7 @@ public class MinimalModernOverlay {
             default -> MM_Sprites.Horse_Silhouette;
         };
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x() + 20,
-            anchor.y() - 16,
-            mountSprite.x(), mountSprite.y(),
-            mountSprite.width(), mountSprite.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderSprite(guiGraphics, anchor.x() + 20, anchor.y() - 16, mountSprite);
     }
 
     private static void renderMountHealthBar(ForgeGui gui, GuiGraphics guiGraphics, Vector2 mainAnchor, boolean separatedBars, float health, float maxHealth) {
@@ -315,25 +238,8 @@ public class MinimalModernOverlay {
             yRef = mainAnchor.y() + 26;
         }
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            xRef,
-            yRef,
-            MM_Sprites.MountHealthBackground.x(), MM_Sprites.MountHealthBackground.y(),
-            MM_Sprites.MountHealthBackground.width(), MM_Sprites.MountHealthBackground.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
-
-        final int renderedWidth = ((int)(MM_Sprites.MountHealthBar.width() * (health / maxHealth)));
-
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            xRef + 1,
-            yRef + 1,
-            MM_Sprites.MountHealthBar.x(), MM_Sprites.MountHealthBar.y(),
-            renderedWidth, MM_Sprites.MountHealthBar.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        renderSprite(guiGraphics, xRef, yRef, MM_Sprites.MountHealthBackground);
+        renderHorizontalBar(guiGraphics, xRef + 1, yRef + 1, MM_Sprites.MountHealthBar, health, maxHealth);
 
         if (shouldShowHorseHpNumber()) {
             var alpha = getHorseHpNumbersAlpha();
@@ -395,6 +301,29 @@ public class MinimalModernOverlay {
         return Math.max(255 - (int)fade, 25);
     }
 
+    private static void renderSprite(GuiGraphics guiGraphics, int x, int y, Sprite sprite) {
+        guiGraphics.blit(
+            MINIMAL_MODERN,
+            x,
+            y,
+            sprite.x(), sprite.y(),
+            sprite.width(), sprite.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+        );
+    }
+
+    private static void renderHorizontalBar(GuiGraphics guiGraphics, int x, int y, Sprite sprite, float value, float maxValue) {
+        final int renderedWidth = ((int)(sprite.width() * (value / maxValue)));
+
+        guiGraphics.blit(
+            MINIMAL_MODERN,
+            x,
+            y,
+            sprite.x(), sprite.y(),
+            renderedWidth, sprite.height(),
+            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+        );
+    }
 
     private static void _renderItemWithScale(ForgeGui gui, GuiGraphics guiGraphics, LocalPlayer player, ItemStack itemStack, int x, int y, float scaleFactor) {
         _renderItemWithScale(gui.getMinecraft(), guiGraphics.bufferSource(), guiGraphics.pose(), player, gui.getMinecraft().level, itemStack, x, y, scaleFactor);
