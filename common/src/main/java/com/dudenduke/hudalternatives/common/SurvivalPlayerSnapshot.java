@@ -5,7 +5,12 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodData;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
@@ -102,24 +107,25 @@ public class SurvivalPlayerSnapshot {
         }
 
         var blockPos = ((BlockHitResult)blockHit).getBlockPos();
-        var blockState = player.level().getBlockState(blockPos);
+        var blockState = player.getLevel().getBlockState(blockPos);
 
         var blockStateTags = blockState.getTags().toList();
 
-        var itemTagKey = (blockStateTags.contains(BlockTags.MINEABLE_WITH_PICKAXE)) ? ItemTags.PICKAXES
-            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_AXE)) ? ItemTags.AXES
-            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_SHOVEL)) ? ItemTags.SHOVELS
-            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_HOE)) ? ItemTags.HOES
-            : ItemTags.TOOLS;
 
-        if (itemTagKey == ItemTags.TOOLS) {
+        var itemClass = (blockStateTags.contains(BlockTags.MINEABLE_WITH_PICKAXE)) ? PickaxeItem.class
+            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_AXE)) ? AxeItem.class
+            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_SHOVEL)) ? ShovelItem.class
+            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_HOE)) ? HoeItem.class
+            : Item.class;
+
+        if (itemClass == Item.class) {
             return -1;
         }
 
         var hotbar = getHotbar();
         var toolIndex = -1;
         for (int i = 0; i < hotbar.length; i++) {
-            if (hotbar[i].getTags().toList().contains(itemTagKey)) {
+            if (hotbar[i].getItem().getClass() == itemClass) {
                 toolIndex = i;
                 break;
             }
