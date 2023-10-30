@@ -1,17 +1,24 @@
 package com.dudenduke.hudalternatives.minimalmodern;
 
 import com.dudenduke.hudalternatives.common.*;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-// import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
-// import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-// import org.joml.Matrix4f;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -144,10 +151,8 @@ public class MinimalModernOverlay {
 
     private static void renderActiveItem(ForgeGui gui, PoseStack poseStack, SurvivalPlayerSnapshot player, Vector2 mainAnchor) {
         final float scaleFactor = 1.5f;
-        gui.getMinecraft().getItemRenderer().renderAndDecorateItem(player.localPlayer, player.mainHandItem, mainAnchor.x() + 8, mainAnchor.y() + 11, 0);
+        renderItemWithScale(gui, player.localPlayer, player.mainHandItem, mainAnchor.x() + 8, mainAnchor.y() + 11, scaleFactor);
         gui.getMinecraft().getItemRenderer().renderGuiItemDecorations(gui.getFont(), player.mainHandItem, mainAnchor.x() + 8, mainAnchor.y() + 13);
-        // _renderItemWithScale(gui, guiGraphics, player.localPlayer, player.mainHandItem, mainAnchor.x() + 8, mainAnchor.y() + 11, scaleFactor);
-        // guiGraphics.renderItemDecorations(gui.getFont(), player.mainHandItem, mainAnchor.x() + 8, mainAnchor.y() + 13);
 
         var blue = 0x008db8;
         GuiComponent.drawString(poseStack, gui.getFont(), String.valueOf(player.selectedHotbarIndex + 1), mainAnchor.x() - 7, mainAnchor.y() + 14, blue);
@@ -159,7 +164,7 @@ public class MinimalModernOverlay {
         var rightItem = hotbar[Math.floorMod(player.selectedHotbarIndex + 1, 9)];
 
         gui.getMinecraft().getItemRenderer().renderAndDecorateItem(player.localPlayer, leftItem, mainAnchor.x() - 6, mainAnchor.y() - 14, 0);
-        gui.getMinecraft().getItemRenderer().renderAndDecorateItem(player.localPlayer, rightItem,mainAnchor.x() + 23,mainAnchor.y() + 340, 0);
+        gui.getMinecraft().getItemRenderer().renderAndDecorateItem(player.localPlayer, rightItem,mainAnchor.x() + 23,mainAnchor.y() + 34, 0);
 
         gui.getMinecraft().getItemRenderer().renderGuiItemDecorations(gui.getFont(), leftItem, mainAnchor.x() - 6, mainAnchor.y() - 14);
         gui.getMinecraft().getItemRenderer().renderGuiItemDecorations(gui.getFont(), rightItem, mainAnchor.x() + 23, mainAnchor.y() + 34);
@@ -328,44 +333,55 @@ public class MinimalModernOverlay {
         );
     }
 
-//    private static void _renderItemWithScale(ForgeGui gui, GuiGraphics guiGraphics, LocalPlayer player, ItemStack itemStack, int x, int y, float scaleFactor) {
-//        _renderItemWithScale(gui.getMinecraft(), guiGraphics.bufferSource(), guiGraphics.pose(), player, gui.getMinecraft().level, itemStack, x, y, scaleFactor);
-//    }
-//
-//    private static void _renderItemWithScale(
-//        Minecraft minecraft, MultiBufferSource.BufferSource bufferSource, PoseStack pose, LivingEntity pEntity, Level pLevel,
-//        ItemStack pStack, int pX, int pY, float scaleFactor
-//    ) {
-//        if (!pStack.isEmpty()) {
-//            BakedModel bakedmodel = minecraft.getItemRenderer().getModel(pStack, pLevel, pEntity, 0);
-//            pose.pushPose();
-//            pose.translate((float)(pX + 8), (float)(pY + 8), (float)(150));
-//
-//            pose.mulPoseMatrix((new Matrix4f()).scaling(1.0F, -1.0F, 1.0F));
-//
-//            final float adjustedScale = 16.0F * scaleFactor;
-//
-//            //pose.scale(16.0F, 16.0F, 16.0F);
-//            pose.scale(adjustedScale, adjustedScale, adjustedScale);
-//
-//            boolean flag = !bakedmodel.usesBlockLight();
-//            if (flag) {
-//                Lighting.setupForFlatItems();
-//            }
-//
-//            minecraft.getItemRenderer().render(pStack, ItemDisplayContext.GUI, false, pose, bufferSource, 15728880, OverlayTexture.NO_OVERLAY, bakedmodel);
-//
-//            //this.flush();
-//            RenderSystem.disableDepthTest();
-//            bufferSource.endBatch();
-//            RenderSystem.enableDepthTest();
-//
-//
-//            if (flag) {
-//                Lighting.setupFor3DItems();
-//            }
-//
-//            pose.popPose();
-//        }
-//    }
+
+    private static void renderItemWithScale(ForgeGui gui, LivingEntity player, ItemStack pStack, int pX, int pY, float scaleFactor) {
+        if (!pStack.isEmpty()) {
+            var itemRenderer = gui.getMinecraft().getItemRenderer();
+            BakedModel bakedmodel = itemRenderer.getModel(pStack, null, player, 0);
+            itemRenderer.blitOffset = itemRenderer.blitOffset + 50.0F;
+
+            try {
+                _renderItemWithScale(gui, pStack, pX, pY, bakedmodel, scaleFactor);
+            } catch (Throwable throwable) {
+                var cause = throwable.getCause();
+            }
+
+            itemRenderer.blitOffset = itemRenderer.blitOffset - 50.0F;
+        }
+    }
+
+    protected static void _renderItemWithScale(ForgeGui gui, ItemStack pStack, int pX, int pY, BakedModel pBakedModel, float scaleFactor) {
+        var itemRenderer = gui.getMinecraft().getItemRenderer();
+        gui.getMinecraft().textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS).setFilter(false, false);
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        PoseStack posestack = RenderSystem.getModelViewStack();
+        posestack.pushPose();
+        posestack.translate((double)pX, (double)pY, (double)(100.0F + itemRenderer.blitOffset));
+        posestack.translate(8.0D, 8.0D, 0.0D);
+        posestack.scale(1.0F, -1.0F, 1.0F);
+
+        posestack.scale(16.0F * scaleFactor, 16.0F * scaleFactor, 16.0F * scaleFactor);
+
+        RenderSystem.applyModelViewMatrix();
+        PoseStack posestack1 = new PoseStack();
+        MultiBufferSource.BufferSource multibuffersource$buffersource = Minecraft.getInstance().renderBuffers().bufferSource();
+        boolean flag = !pBakedModel.usesBlockLight();
+        if (flag) {
+            Lighting.setupForFlatItems();
+        }
+
+        itemRenderer.render(pStack, ItemTransforms.TransformType.GUI, false, posestack1, multibuffersource$buffersource, 15728880, OverlayTexture.NO_OVERLAY, pBakedModel);
+        multibuffersource$buffersource.endBatch();
+        RenderSystem.enableDepthTest();
+        if (flag) {
+            Lighting.setupFor3DItems();
+        }
+
+        posestack.popPose();
+        RenderSystem.applyModelViewMatrix();
+    }
+
 }
