@@ -10,7 +10,7 @@ public class MM_Sprites {
     public static Sprite LargeHex = new Sprite(28, 207, 32, 36);
     public static Sprite SmallHex = new Sprite(4, 194, 22, 24);
     public static Sprite ValueBarsBackground = new Sprite(59, 218, 76, 13);
-    public static Sprite DrowingHexSprite = new Sprite(29, 172,  30, 34);
+    public static Sprite DrowningHexSprite = new Sprite(29, 172,  30, 34);
 
 
     private static final Dimensions healthSpriteDims = new Dimensions(74, 5);

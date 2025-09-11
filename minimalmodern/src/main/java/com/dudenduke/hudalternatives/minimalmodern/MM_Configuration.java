@@ -1,16 +1,16 @@
 package com.dudenduke.hudalternatives.minimalmodern;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class MM_Configuration {
-    public static final ForgeConfigSpec.ConfigValue<Integer> MAIN_GUI_DRAW_CORNER;
-    public static final ForgeConfigSpec.ConfigValue<Integer> MAIN_GUI_HORIZONTAL_PADDING;
-    public static final ForgeConfigSpec.ConfigValue<Integer> MAIN_GUI_VERTICAL_PADDING;
+    public static final ModConfigSpec.ConfigValue<Integer> MAIN_GUI_DRAW_CORNER;
+    public static final ModConfigSpec.ConfigValue<Integer> MAIN_GUI_HORIZONTAL_PADDING;
+    public static final ModConfigSpec.ConfigValue<Integer> MAIN_GUI_VERTICAL_PADDING;
 
-    public static final ForgeConfigSpec.ConfigValue<Boolean> SEPARATE_VALUE_BARS;
-    public static final ForgeConfigSpec.ConfigValue<Integer> VALUE_BARS_DRAW_CORNER;
-    public static final ForgeConfigSpec.ConfigValue<Integer> VALUE_BARS_HORIZONTAL_PADDING;
-    public static final ForgeConfigSpec.ConfigValue<Integer> VALUE_BARS_VERTICAL_PADDING;
+    public static final ModConfigSpec.ConfigValue<Boolean> SEPARATE_VALUE_BARS;
+    public static final ModConfigSpec.ConfigValue<Integer> VALUE_BARS_DRAW_CORNER;
+    public static final ModConfigSpec.ConfigValue<Integer> VALUE_BARS_HORIZONTAL_PADDING;
+    public static final ModConfigSpec.ConfigValue<Integer> VALUE_BARS_VERTICAL_PADDING;
 
 
     public static int MainGuiDrawCorner() { return MAIN_GUI_DRAW_CORNER.get(); }
@@ -24,8 +24,8 @@ public class MM_Configuration {
     public static int ValueBarsVerticalPadding() { return VALUE_BARS_VERTICAL_PADDING.get(); }
 
 
-    public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    public static final ModConfigSpec SPEC;
 
     static {
         BUILDER.push("Configs for Minimal Modern");

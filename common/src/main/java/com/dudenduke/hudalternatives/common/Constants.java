@@ -1,6 +1,8 @@
 package com.dudenduke.hudalternatives.common;
 
+import net.minecraft.resources.ResourceLocation;
+
 public class Constants {
-	private static final String modParent = "hudalternatives";
+    public static final String modParent = "hudalternatives";
 
 }

@@ -10,93 +10,90 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
 public class SurvivalPlayerSnapshot {
+    public enum Effect
+    {
+        NONE, POISONED, WITHERED, HUNGERED
+    }
 
-        public enum Effect
-        {
-            NONE, POISONED, WITHERED, HUNGERED
+    public final LocalPlayer localPlayer;
+    public final int experienceLevel;
+    public final int totalExperience;
+    public final float health;
+    public final float maxHealth;
+    public final float absorption;
+    public final float foodLevel;
+    public final float maxFoodLevel;
+    public final float saturation;
+
+    public final Effect healthEffect;
+    public final Effect hungerEffect;
+
+    public final float drownPercentage;
+
+    public final int selectedHotbarIndex;
+    public final ItemStack mainHandItem;
+
+    private ItemStack[] _hotbar = null;
+
+    public SurvivalPlayerSnapshot(LocalPlayer player) {
+        localPlayer = player;
+
+        experienceLevel = player.experienceLevel;
+        totalExperience = player.totalExperience;
+
+        maxHealth = player.getMaxHealth();
+        health = player.getHealth();
+        absorption = player.getAbsorptionAmount();
+        final FoodData foodData = player.getFoodData();
+        maxFoodLevel = 20f;
+        foodLevel = foodData.getFoodLevel();
+        saturation = foodData.getSaturationLevel();
+
+        healthEffect = getHealthEffect(player);
+        hungerEffect = getHungerEffect(player);
+
+        mainHandItem = player.getMainHandItem();
+        selectedHotbarIndex = player.getInventory().getSelectedSlot();
+
+        drownPercentage = 1 - (((float)player.getAirSupply()) / ((float)player.getMaxAirSupply()));
+    }
+
+    public ItemStack[] getHotbar() {
+        if (_hotbar != null) return _hotbar;
+        ItemStack[] hotbar = new ItemStack[9];
+        for (int i = 0; i < hotbar.length; i++) {
+            hotbar[i] = localPlayer.getInventory().getItem(i);
         }
+        _hotbar = hotbar;
+        return  hotbar;
+    }
 
-        public final LocalPlayer localPlayer;
-        public final int experienceLevel;
-        public final int totalExperience;
-        public final float health;
-        public final float maxHealth;
-        public final float absorption;
-        public final float foodLevel;
-        public final float maxFoodLevel;
-        public final float saturation;
+    private static Effect getHealthEffect(LocalPlayer player) {
+        final var effects = player.getActiveEffects();
+        final var poisonedOrWitheredEffect = effects.stream()
+                .filter(e -> e.getEffect().equals(MobEffects.WITHER) || e.getEffect().equals(MobEffects.POISON))
+                .findFirst();
 
-        public final Effect healthEffect;
-        public final Effect hungerEffect;
+        return (poisonedOrWitheredEffect.isPresent())
+                ? (poisonedOrWitheredEffect.get().getEffect().equals(MobEffects.WITHER)
+                ? SurvivalPlayerSnapshot.Effect.WITHERED : SurvivalPlayerSnapshot.Effect.POISONED)
+                : SurvivalPlayerSnapshot.Effect.NONE;
+    }
 
-        public final float drownPercentage;
+    private static Effect getHungerEffect(LocalPlayer player) {
+        final var effects = player.getActiveEffects();
+        final var hungeredEffect = effects.stream()
+                .filter(e -> e.getEffect().equals(MobEffects.HUNGER))
+                .findFirst();
 
-        public final int selectedHotbarIndex;
-        public final ItemStack mainHandItem;
-
-        private ItemStack[] _hotbar = null;
-
-
-        public SurvivalPlayerSnapshot(LocalPlayer player) {
-            localPlayer = player;
-
-            experienceLevel = player.experienceLevel;
-            totalExperience = player.totalExperience;
-
-            maxHealth = player.getMaxHealth();
-            health = player.getHealth();
-            absorption = player.getAbsorptionAmount();
-            final FoodData foodData = player.getFoodData();
-            maxFoodLevel = 20f;
-            foodLevel = foodData.getFoodLevel();
-            saturation = foodData.getSaturationLevel();
-
-            healthEffect = getHealthEffect(player);
-            hungerEffect = getHungerEffect(player);
-
-            mainHandItem = player.getMainHandItem();
-            selectedHotbarIndex = player.getInventory().selected;
-
-            drownPercentage = 1 - (((float)player.getAirSupply()) / ((float)player.getMaxAirSupply()));
-        }
-
-
-        public ItemStack[] getHotbar() {
-            if (_hotbar != null) return _hotbar;
-            ItemStack[] hotbar = new ItemStack[9];
-            for (int i = 0; i < hotbar.length; i++) {
-                hotbar[i] = localPlayer.getInventory().getItem(i);
-            }
-            _hotbar = hotbar;
-            return  hotbar;
-        }
-
-        private static Effect getHealthEffect(LocalPlayer player) {
-                final var effects = player.getActiveEffects();
-                final var poisonedOrWitheredEffect = effects.stream()
-                    .filter(e -> e.getEffect().equals(MobEffects.WITHER) || e.getEffect().equals(MobEffects.POISON))
-                    .findFirst();
-
-                return (poisonedOrWitheredEffect.isPresent())
-                    ? (poisonedOrWitheredEffect.get().getEffect().equals(MobEffects.WITHER)
-                        ? SurvivalPlayerSnapshot.Effect.WITHERED : SurvivalPlayerSnapshot.Effect.POISONED)
-                    : SurvivalPlayerSnapshot.Effect.NONE;
-        }
-
-        private static Effect getHungerEffect(LocalPlayer player) {
-                final var effects = player.getActiveEffects();
-                final var hungeredEffect = effects.stream()
-                    .filter(e -> e.getEffect().equals(MobEffects.HUNGER))
-                    .findFirst();
-
-                return (hungeredEffect.isPresent()) ? SurvivalPlayerSnapshot.Effect.HUNGERED : SurvivalPlayerSnapshot.Effect.NONE;
-        }
+        return (hungeredEffect.isPresent()) ? SurvivalPlayerSnapshot.Effect.HUNGERED : SurvivalPlayerSnapshot.Effect.NONE;
+    }
 
     public int findCorrectToolInHotbar() {
-        var player = localPlayer;
+        LocalPlayer player = localPlayer;
         if (player == null) return -1;
 
-        var blockHit = player.pick(5.0d, 0.0f, false);
+        HitResult blockHit = player.pick(5.0d, 0.0f, false);
         if (blockHit.getType() != HitResult.Type.BLOCK) {
             return -1;
         }
@@ -107,17 +104,18 @@ public class SurvivalPlayerSnapshot {
         var blockStateTags = blockState.getTags().toList();
 
         var itemTagKey = (blockStateTags.contains(BlockTags.MINEABLE_WITH_PICKAXE)) ? ItemTags.PICKAXES
-            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_AXE)) ? ItemTags.AXES
-            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_SHOVEL)) ? ItemTags.SHOVELS
-            : (blockStateTags.contains(BlockTags.MINEABLE_WITH_HOE)) ? ItemTags.HOES
-            : ItemTags.TOOLS;
+                : (blockStateTags.contains(BlockTags.MINEABLE_WITH_AXE)) ? ItemTags.AXES
+                : (blockStateTags.contains(BlockTags.MINEABLE_WITH_SHOVEL)) ? ItemTags.SHOVELS
+                : (blockStateTags.contains(BlockTags.MINEABLE_WITH_HOE)) ? ItemTags.HOES
+                : null;
+                // : ItemTags.TOOLS;
 
-        if (itemTagKey == ItemTags.TOOLS) {
+        if (itemTagKey == null) {
             return -1;
         }
 
-        var hotbar = getHotbar();
-        var toolIndex = -1;
+        ItemStack[] hotbar = getHotbar();
+        int toolIndex = -1;
         for (int i = 0; i < hotbar.length; i++) {
             if (hotbar[i].getTags().toList().contains(itemTagKey)) {
                 toolIndex = i;
@@ -136,8 +134,8 @@ public class SurvivalPlayerSnapshot {
     }
 
     private int findNextWeaponOfTypeInHotbar(WeaponType weaponType) {
-        var hotbar = getHotbar();
-        var nextWeaponIndex = -1;
+        ItemStack[] hotbar = getHotbar();
+        int nextWeaponIndex = -1;
 
         int startingIndex = 0;
         if (weaponType == WeaponType.MELEE) {
@@ -166,6 +164,4 @@ public class SurvivalPlayerSnapshot {
 
         return nextWeaponIndex;
     }
-
-
 }

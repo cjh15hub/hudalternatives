@@ -1,106 +1,99 @@
 package com.dudenduke.hudalternatives.minimalmodern;
 
-import com.dudenduke.hudalternatives.common.Dimensions;
-import com.dudenduke.hudalternatives.common.LivingVehicleType;
-import com.dudenduke.hudalternatives.common.PlayerMountData;
-import com.dudenduke.hudalternatives.common.SurvivalPlayerSnapshot;
-import com.dudenduke.hudalternatives.common.Vector2;
-import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.dudenduke.hudalternatives.common.*;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import org.joml.Matrix4f;
 
+import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 
 public class MinimalModernOverlay {
-    private static final ResourceLocation MINIMAL_MODERN = new ResourceLocation(Constants.MODID, "textures/minimal_modern.png");
+    private static final ResourceLocation MINIMAL_MODERN = ResourceLocation.fromNamespaceAndPath(Constants.MODID, "textures/minimal_modern.png");
 
     private static final Duration horseHpNumbersSolidSeconds = Duration.ofMillis(1500);
     private static final Duration horseHpNumbersFadeSeconds = Duration.ofMillis(1500);
     private static final Duration horseHpNumbersShowTime = horseHpNumbersSolidSeconds.plus(horseHpNumbersFadeSeconds);
 
-    public static final IGuiOverlay HUD = new IGuiOverlay() {
-        @Override
-        public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-            final LocalPlayer player = gui.getMinecraft().player;
-            if (player == null) return;
+    private static final Font DefaultFont = Minecraft.getInstance().font;
+    private static final Color BrightGreen = new Color(0, 233, 104);
+    private static final Color SteelBlue = new Color(0, 141, 184);
+    private static final Color BrightOrange = new Color(214, 84, 16);
+    private static final Color MediumGray = new Color(92, 92, 92);
+    private static final int threeBytes = 24;
 
-            final var screenDims = new Dimensions(screenWidth, screenHeight);
-            SurvivalPlayerSnapshot playerSnapshot = new SurvivalPlayerSnapshot(player);
-            PlayerMountData.updateMountData(player);
+    public static void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        final LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) return;
 
-            // Standard reference point for all gui elements
-            Vector2 mainScreenAnchor = getMainScreenAnchorPoint(screenDims, MM_Configuration.MainGuiDrawCorner());
-            var valueBarAnchorPoint = mainScreenAnchor;  // if separated, adjusted anchor point for value bars
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
 
+        final Dimensions screenDims = new Dimensions(screenWidth, screenHeight);
+        SurvivalPlayerSnapshot playerSnapshot = new SurvivalPlayerSnapshot(player);
+        PlayerMountData.updateMountData(player);
 
-            // Main Elements and Value Bars Separated
-            var separatedBars = (MM_Configuration.SeparateValueBars() && MM_Configuration.ValueBarsDrawCorner() != MM_Configuration.MainGuiDrawCorner());
-            if (separatedBars) {
-                // Main GUI rendered left side
-                if (MM_Configuration.MainGuiDrawCorner() == 1 || MM_Configuration.MainGuiDrawCorner() == 3) {
-                    var adjustedX = mainScreenAnchor.x() + MM_Sprites.ValueBarsBackground.width() - (MM_Sprites.SmallHex.width() / 2) - 1;
-                    mainScreenAnchor = new Vector2(adjustedX, mainScreenAnchor.y());
-                }
-                // Adjust the value bars anchor point
-                valueBarAnchorPoint = getSeparatedValueBarsAnchorPoint(screenDims, MM_Configuration.ValueBarsDrawCorner());
-                renderValueBarsBackground(guiGraphics, valueBarAnchorPoint);
+        // Standard reference point for all gui elements
+        Vector2 mainScreenAnchor = getMainScreenAnchorPoint(screenDims, MM_Configuration.MainGuiDrawCorner());
+        Vector2 valueBarAnchorPoint = mainScreenAnchor;  // if separated, adjusted anchor point for value bars
+
+        // Main Elements and Value Bars Separated
+        boolean separatedBars = (MM_Configuration.SeparateValueBars() && MM_Configuration.ValueBarsDrawCorner() != MM_Configuration.MainGuiDrawCorner());
+        if (separatedBars) {
+            // Main GUI rendered left side
+            if (MM_Configuration.MainGuiDrawCorner() == 1 || MM_Configuration.MainGuiDrawCorner() == 3) {
+                int adjustedX = mainScreenAnchor.x() + MM_Sprites.ValueBarsBackground.width() - (MM_Sprites.SmallHex.width() / 2) - 1;
+                mainScreenAnchor = new Vector2(adjustedX, mainScreenAnchor.y());
             }
-            else {
-                // All Elements Together
-                renderValueBarsBackground(guiGraphics, mainScreenAnchor);
-            }
-
-            // Main GUI Elements
-            renderMainHex(guiGraphics, mainScreenAnchor);
-            renderHotbarHexes(guiGraphics, mainScreenAnchor);
-            renderActiveItem(gui, guiGraphics, playerSnapshot, mainScreenAnchor);
-            renderAdjacentItems(gui, guiGraphics, playerSnapshot, mainScreenAnchor);
-
-            // Value Bars
-            renderHealthBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.health, playerSnapshot.maxHealth, playerSnapshot.healthEffect);
-            renderGoldenHealthBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.absorption);
-            renderFoodBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.foodLevel, playerSnapshot.maxFoodLevel, playerSnapshot.hungerEffect);
-            renderFoodSaturationBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.saturation, playerSnapshot.maxFoodLevel);
-
-            // Misc Survival
-            renderDrowningBar(guiGraphics, mainScreenAnchor, playerSnapshot.drownPercentage);
-
-            // Player Riding Mount
-            if (PlayerMountData.isPlayerMounted() && PlayerMountData.getMountType() != null) {
-                renderMountHex(guiGraphics, mainScreenAnchor, PlayerMountData.getMountType());
-
-                var mountHealthBarAnchorPoint = (!separatedBars)
-                    ? mainScreenAnchor
-                    : getSeparatedValueBarsAnchorPoint(screenDims, MM_Configuration.ValueBarsDrawCorner());
-                renderMountHealthBar(gui, guiGraphics, mountHealthBarAnchorPoint, separatedBars, PlayerMountData.getMountHealth(), PlayerMountData.getMountMaxHealth());
-            }
-            else {
-                renderExperienceLevel(gui, guiGraphics, mainScreenAnchor, playerSnapshot.experienceLevel);
-            }
+            // Adjust the value bars anchor point
+            valueBarAnchorPoint = getSeparatedValueBarsAnchorPoint(screenDims, MM_Configuration.ValueBarsDrawCorner());
+            renderValueBarsBackground(guiGraphics, valueBarAnchorPoint);
+        }
+        else {
+            // All Elements Together
+            renderValueBarsBackground(guiGraphics, mainScreenAnchor);
         }
 
-    };
+        // Main GUI Elements
+        renderMainHex(guiGraphics, mainScreenAnchor);
+        renderHotbarHexes(guiGraphics, mainScreenAnchor);
+        renderActiveItem(guiGraphics, playerSnapshot, mainScreenAnchor);
+        renderAdjacentItems(guiGraphics, playerSnapshot, mainScreenAnchor);
+
+        // Value Bars
+        renderHealthBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.health, playerSnapshot.maxHealth, playerSnapshot.healthEffect);
+        renderGoldenHealthBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.absorption);
+        renderFoodBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.foodLevel, playerSnapshot.maxFoodLevel, playerSnapshot.hungerEffect);
+        renderFoodSaturationBar(guiGraphics, valueBarAnchorPoint, playerSnapshot.saturation, playerSnapshot.maxFoodLevel);
+
+        // Misc Survival
+        renderDrowningBar(guiGraphics, mainScreenAnchor, playerSnapshot.drownPercentage);
+
+        // Player Riding Mount
+        if (PlayerMountData.isPlayerMounted() && PlayerMountData.getMountType() != null) {
+            renderMountHex(guiGraphics, mainScreenAnchor, PlayerMountData.getMountType());
+
+            Vector2 mountHealthBarAnchorPoint = (!separatedBars)
+                ? mainScreenAnchor
+                : getSeparatedValueBarsAnchorPoint(screenDims, MM_Configuration.ValueBarsDrawCorner());
+            renderMountHealthBar(guiGraphics, mountHealthBarAnchorPoint, separatedBars, PlayerMountData.getMountHealth(), PlayerMountData.getMountMaxHealth());
+        }
+        else {
+            renderExperienceLevel(guiGraphics, mainScreenAnchor, playerSnapshot.experienceLevel);
+        }
+    }
 
     private static Vector2 getMainScreenAnchorPoint(Dimensions screen, int drawCorner) {
-        var leftX = 10 +MM_Configuration.MainGuiHorizontalPadding();
-        var rightX = screen.width() - MM_Sprites.LargeHex.width() - MM_Sprites.MainHealthBar.width() -2 -MM_Configuration.MainGuiHorizontalPadding();
-        var topY = 19 +MM_Configuration.MainGuiVerticalPadding();
-        var bottomY = screen.height() - MM_Sprites.LargeHex.height() - 19 -MM_Configuration.MainGuiVerticalPadding();
+        int leftX = 10 +MM_Configuration.MainGuiHorizontalPadding();
+        int rightX = screen.width() - MM_Sprites.LargeHex.width() - MM_Sprites.MainHealthBar.width() -2 -MM_Configuration.MainGuiHorizontalPadding();
+        int topY = 19 +MM_Configuration.MainGuiVerticalPadding();
+        int bottomY = screen.height() - MM_Sprites.LargeHex.height() - 19 -MM_Configuration.MainGuiVerticalPadding();
 
         return switch(drawCorner) {
             case 0 -> new Vector2(leftX, topY);     // top left
@@ -112,10 +105,10 @@ public class MinimalModernOverlay {
     }
 
     private static Vector2 getSeparatedValueBarsAnchorPoint(Dimensions screen, int drawCorner) {
-        var leftX = 4 - MM_Sprites.LargeHex.width() +MM_Configuration.ValueBarsHorizontalPadding();
-        var rightX = screen.width() - MM_Sprites.LargeHex.width() - MM_Sprites.MainHealthBar.width() -2 -MM_Configuration.ValueBarsHorizontalPadding();
-        var topY = 19 - MM_Sprites.SmallHex.height() +MM_Configuration.ValueBarsVerticalPadding();
-        var bottomY = screen.height() - MM_Sprites.LargeHex.height() - 19 + MM_Sprites.SmallHex.height() -MM_Configuration.ValueBarsVerticalPadding();
+        int leftX = 4 - MM_Sprites.LargeHex.width() +MM_Configuration.ValueBarsHorizontalPadding();
+        int rightX = screen.width() - MM_Sprites.LargeHex.width() - MM_Sprites.MainHealthBar.width() -2 -MM_Configuration.ValueBarsHorizontalPadding();
+        int topY = 19 - MM_Sprites.SmallHex.height() +MM_Configuration.ValueBarsVerticalPadding();
+        int bottomY = screen.height() - MM_Sprites.LargeHex.height() - 19 + MM_Sprites.SmallHex.height() -MM_Configuration.ValueBarsVerticalPadding();
 
         return switch(drawCorner) {
             case 0 -> new Vector2(leftX, topY);     // top left
@@ -126,90 +119,97 @@ public class MinimalModernOverlay {
         };
     }
 
-    private static void renderMainHex(GuiGraphics guiGraphics, Vector2 anchor) {
+    /**
+     * Helper Method to blit
+     * @param guiGraphics graphics instance
+     * @param screenX screen x point to draw sprite
+     * @param screenY screen y point to draw sprite
+     * @param sprite sprite to render from MINIMAL_MODERN
+     */
+    private static void blitFromMainSpriteSheet(GuiGraphics guiGraphics, int screenX, int screenY, Sprite sprite) {
+        // argument order has changed across versions
+        // BEWARE guiGraphics.blit(...) overloads DO NOT accept params x, y, u, v, etc. in the same order!
+        // Could not figure out issues with guiGraphics.blitSprite(...)
+
         guiGraphics.blit(
+            RenderPipelines.GUI_TEXTURED,
             MINIMAL_MODERN,
-            anchor.x(),
-            anchor.y(),
-            MM_Sprites.LargeHex.x(), MM_Sprites.LargeHex.y(),
-            MM_Sprites.LargeHex.width(), MM_Sprites.LargeHex.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            screenX,
+            screenY,
+            sprite.u(),
+            sprite.v(),
+            sprite.width(),
+            sprite.height(),
+            MM_Sprites.FullSheet.width(),
+            MM_Sprites.FullSheet.height()
         );
     }
 
+    /**
+     * Helper method to blit
+     * @param guiGraphics graphics instance
+     * @param point screen point to draw sprite
+     * @param sprite sprite to render from MINIMAL_MODERN
+     */
+    private static void blitFromMainSpriteSheet(GuiGraphics guiGraphics, Vector2 point, Sprite sprite) {
+        blitFromMainSpriteSheet(guiGraphics, point.x(), point.y(), sprite);
+    }
+
+    private static void renderMainHex(GuiGraphics guiGraphics, Vector2 anchor) {
+        blitFromMainSpriteSheet(guiGraphics, anchor, MM_Sprites.LargeHex);
+    }
+
     private static void renderValueBarsBackground(GuiGraphics guiGraphics, Vector2 anchor) {
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x() + 31,
-            anchor.y() + 11,
-            MM_Sprites.ValueBarsBackground.x(), MM_Sprites.ValueBarsBackground.y(),
-            MM_Sprites.ValueBarsBackground.width(), MM_Sprites.ValueBarsBackground.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        blitFromMainSpriteSheet(guiGraphics, anchor.x() + 31, anchor.y() + 11, MM_Sprites.ValueBarsBackground);
     }
 
     private static void renderHotbarHexes(GuiGraphics guiGraphics, Vector2 anchor) {
         // top left
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x() - 9,
-            anchor.y() - 18,
-            MM_Sprites.SmallHex.x(), MM_Sprites.SmallHex.y(),
-            MM_Sprites.SmallHex.width(), MM_Sprites.SmallHex.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        blitFromMainSpriteSheet(guiGraphics, anchor.x() - 9, anchor.y() - 18, MM_Sprites.SmallHex);
 
         // bottom right
-        guiGraphics.blit(
-            MINIMAL_MODERN,
-            anchor.x() + 20,
-            anchor.y() + 30,
-            MM_Sprites.SmallHex.x(), MM_Sprites.SmallHex.y(),
-            MM_Sprites.SmallHex.width(), MM_Sprites.SmallHex.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
-        );
+        blitFromMainSpriteSheet(guiGraphics, anchor.x() + 20, anchor.y() + 30, MM_Sprites.SmallHex);
     }
 
-    private static void renderExperienceLevel(ForgeGui gui, GuiGraphics guiGraphics, Vector2 mainAnchor, int experienceLevel) {
-        var green = 0x00e968;
-        guiGraphics.drawString(gui.getFont(), String.valueOf(experienceLevel), mainAnchor.x() + 26, mainAnchor.y() - 3, green, true);
+    private static void renderExperienceLevel(GuiGraphics guiGraphics, Vector2 mainAnchor, int experienceLevel) {
+        guiGraphics.drawString(DefaultFont, String.valueOf(experienceLevel), mainAnchor.x() + 26, mainAnchor.y() - 3, BrightGreen.getRGB(), true);
     }
 
-    private static void renderActiveItem(ForgeGui gui, GuiGraphics guiGraphics, SurvivalPlayerSnapshot player, Vector2 mainAnchor) {
+    private static void renderActiveItem(GuiGraphics guiGraphics, SurvivalPlayerSnapshot player, Vector2 mainAnchor) {
         final float scaleFactor = 1.5f;
-        _renderItemWithScale(gui, guiGraphics, player.localPlayer, player.mainHandItem, mainAnchor.x() + 8, mainAnchor.y() + 11, scaleFactor);
-        guiGraphics.renderItemDecorations(gui.getFont(), player.mainHandItem, mainAnchor.x() + 8, mainAnchor.y() + 13);
 
-        var blue = 0x008db8;
-        guiGraphics.drawString(gui.getFont(), String.valueOf(player.selectedHotbarIndex + 1), mainAnchor.x() - 7, mainAnchor.y() + 14, blue, true);
+        renderItemWithScale(guiGraphics, player.mainHandItem, mainAnchor.x() + 4, mainAnchor.y() + 6, scaleFactor);
+
+        guiGraphics.renderItemDecorations(DefaultFont, player.mainHandItem, mainAnchor.x() + 8, mainAnchor.y() + 13);
+
+        guiGraphics.drawString(DefaultFont, String.valueOf(player.selectedHotbarIndex + 1), mainAnchor.x() - 7, mainAnchor.y() + 14, SteelBlue.getRGB(), true);
     }
 
-    private static void renderAdjacentItems(ForgeGui gui, GuiGraphics guiGraphics, SurvivalPlayerSnapshot player, Vector2 mainAnchor) {
-        var hotbar = player.getHotbar();
-        var leftItem =  hotbar[Math.floorMod(player.selectedHotbarIndex - 1, 9)];
-        var rightItem = hotbar[Math.floorMod(player.selectedHotbarIndex + 1, 9)];
+    private static void renderAdjacentItems(GuiGraphics guiGraphics, SurvivalPlayerSnapshot player, Vector2 mainAnchor) {
+        ItemStack[] hotbar = player.getHotbar();
+        ItemStack leftItem =  hotbar[Math.floorMod(player.selectedHotbarIndex - 1, 9)];
+        ItemStack rightItem = hotbar[Math.floorMod(player.selectedHotbarIndex + 1, 9)];
 
         guiGraphics.renderItem(leftItem, mainAnchor.x() - 6, mainAnchor.y() - 14);
         guiGraphics.renderItem(rightItem,mainAnchor.x() + 23,mainAnchor.y() + 34);
 
-        guiGraphics.renderItemDecorations(gui.getFont(), leftItem, mainAnchor.x() - 6, mainAnchor.y() - 14);
-        guiGraphics.renderItemDecorations(gui.getFont(), rightItem, mainAnchor.x() + 23, mainAnchor.y() + 34);
+        guiGraphics.renderItemDecorations(DefaultFont, leftItem, mainAnchor.x() - 6, mainAnchor.y() - 14);
+        guiGraphics.renderItemDecorations(DefaultFont, rightItem, mainAnchor.x() + 23, mainAnchor.y() + 34);
     }
 
     private static void renderHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float health, float maxHealth, SurvivalPlayerSnapshot.Effect healthState) {
-        var healthBarSprite = (healthState == SurvivalPlayerSnapshot.Effect.WITHERED) ? MM_Sprites.WitheredHealthBar
+        Sprite healthBarSprite = (healthState == SurvivalPlayerSnapshot.Effect.WITHERED) ? MM_Sprites.WitheredHealthBar
             : (healthState == SurvivalPlayerSnapshot.Effect.POISONED) ? MM_Sprites.PoisonedHealthBar
             : MM_Sprites.MainHealthBar;
 
         final int renderedWidth = ((int)(healthBarSprite.width() * (health / maxHealth)));
+        Sprite calculatedSprite = Sprite.SubSpriteWidth(healthBarSprite, renderedWidth);
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        blitFromMainSpriteSheet(
+            guiGraphics,
             mainAnchor.x() + 32,
             mainAnchor.y() + 12,
-            healthBarSprite.x(), healthBarSprite.y(),
-            renderedWidth, healthBarSprite.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            calculatedSprite
         );
     }
 
@@ -217,74 +217,75 @@ public class MinimalModernOverlay {
         float maxAbsorption = 20f;
         final int renderedWidth = ((int)(MM_Sprites.GoldenHealthBar.width() * (absorption / maxAbsorption)));
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        Sprite calculatedSprite = Sprite.SubSpriteWidth(MM_Sprites.GoldenHealthBar, renderedWidth);
+
+        blitFromMainSpriteSheet(
+            guiGraphics,
             mainAnchor.x() + 32,
             mainAnchor.y() + 14,
-            MM_Sprites.GoldenHealthBar.x(), MM_Sprites.GoldenHealthBar.y(),
-            renderedWidth, MM_Sprites.GoldenHealthBar.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            calculatedSprite
         );
     }
 
     private static void renderFoodBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float foodLevel, float maxFoodLevel, SurvivalPlayerSnapshot.Effect hungerState) {
-        var hungerBarSprite = (hungerState == SurvivalPlayerSnapshot.Effect.HUNGERED)
+        Sprite hungerBarSprite = (hungerState == SurvivalPlayerSnapshot.Effect.HUNGERED)
             ? MM_Sprites.PoisonedHungerBar
             : MM_Sprites.MainHungerBar;
 
         final int renderedWidth = ((int)(hungerBarSprite.width() * (foodLevel / maxFoodLevel)));
+        Sprite calculatedSprite = Sprite.SubSpriteWidth(hungerBarSprite, renderedWidth);
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        blitFromMainSpriteSheet(
+            guiGraphics,
             mainAnchor.x() + 32,
             mainAnchor.y() + 20,
-            hungerBarSprite.x(), hungerBarSprite.y(),
-            renderedWidth, hungerBarSprite.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            calculatedSprite
         );
     }
 
     private static void renderFoodSaturationBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float saturation, float maxFoodLevel) {
         final int renderedWidth = ((int)(MM_Sprites.SaturationHungerBar.width() * (saturation / maxFoodLevel)));
+        Sprite calculatedSprite = Sprite.SubSpriteWidth(MM_Sprites.SaturationHungerBar, renderedWidth);
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        blitFromMainSpriteSheet(
+            guiGraphics,
             mainAnchor.x() + 32,
             mainAnchor.y() + 24,
-            MM_Sprites.SaturationHungerBar.x(), MM_Sprites.SaturationHungerBar.y(),
-            renderedWidth, MM_Sprites.SaturationHungerBar.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            calculatedSprite
         );
     }
 
     private static void renderDrowningBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float drowningPercent) {
-        int removedSpriteHeight = MM_Sprites.DrowingHexSprite.height() - ((int)(MM_Sprites.DrowingHexSprite.height() * drowningPercent ));
-        int spriteStartY = removedSpriteHeight + MM_Sprites.DrowingHexSprite.y();
-        int spriteHeightRemaining = MM_Sprites.DrowingHexSprite.height() - removedSpriteHeight;
+        int removedSpriteHeight = MM_Sprites.DrowningHexSprite.height() - ((int)(MM_Sprites.DrowningHexSprite.height() * drowningPercent ));
+        int spriteStartY = removedSpriteHeight + MM_Sprites.DrowningHexSprite.v();
+        int spriteHeightRemaining = MM_Sprites.DrowningHexSprite.height() - removedSpriteHeight;
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        Sprite calculatedSprite = new Sprite(
+            MM_Sprites.DrowningHexSprite.u(),
+            spriteStartY,
+            MM_Sprites.DrowningHexSprite.width(),
+            spriteHeightRemaining
+        );
+
+        blitFromMainSpriteSheet(
+            guiGraphics,
             mainAnchor.x() + 1,
             mainAnchor.y() + 1 + removedSpriteHeight,
-            MM_Sprites.DrowingHexSprite.x(), spriteStartY,
-            MM_Sprites.DrowingHexSprite.width(), spriteHeightRemaining,
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            calculatedSprite
         );
     }
 
 
     private static void renderMountHex(GuiGraphics guiGraphics, Vector2 anchor, LivingVehicleType mountType) {
         // top right
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        blitFromMainSpriteSheet(
+            guiGraphics,
             anchor.x() + 19,
             anchor.y() - 18,
-            MM_Sprites.SmallHex.x(), MM_Sprites.SmallHex.y(),
-            MM_Sprites.SmallHex.width(), MM_Sprites.SmallHex.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            MM_Sprites.SmallHex
         );
 
-        var mountSprite = switch (mountType) {
+        Sprite mountSprite = switch (mountType) {
             case Horse -> MM_Sprites.Horse;
             case Donkey -> MM_Sprites.Donkey;
             case Mule -> MM_Sprites.Donkey;
@@ -296,61 +297,55 @@ public class MinimalModernOverlay {
             default -> MM_Sprites.Horse_Silhouette;
         };
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        blitFromMainSpriteSheet(
+            guiGraphics,
             anchor.x() + 20,
             anchor.y() - 16,
-            mountSprite.x(), mountSprite.y(),
-            mountSprite.width(), mountSprite.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            mountSprite
         );
     }
 
-    private static void renderMountHealthBar(ForgeGui gui, GuiGraphics guiGraphics, Vector2 mainAnchor, boolean separatedBars, float health, float maxHealth) {
-        var xRef = mainAnchor.x() + 41;
-        var yRef = mainAnchor.y() - 8;
+    private static void renderMountHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, boolean separatedBars, float health, float maxHealth) {
+        int xRef = mainAnchor.x() + 41;
+        int yRef = mainAnchor.y() - 8;
 
         if (separatedBars) {
             xRef = mainAnchor.x() + 31;
             yRef = mainAnchor.y() + 26;
         }
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        blitFromMainSpriteSheet(
+            guiGraphics,
             xRef,
             yRef,
-            MM_Sprites.MountHealthBackground.x(), MM_Sprites.MountHealthBackground.y(),
-            MM_Sprites.MountHealthBackground.width(), MM_Sprites.MountHealthBackground.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            MM_Sprites.MountHealthBackground
         );
 
         final int renderedWidth = ((int)(MM_Sprites.MountHealthBar.width() * (health / maxHealth)));
+        Sprite calculatedSprite = Sprite.SubSpriteWidth(MM_Sprites.MountHealthBar, renderedWidth);
 
-        guiGraphics.blit(
-            MINIMAL_MODERN,
+        blitFromMainSpriteSheet(
+            guiGraphics,
             xRef + 1,
             yRef + 1,
-            MM_Sprites.MountHealthBar.x(), MM_Sprites.MountHealthBar.y(),
-            renderedWidth, MM_Sprites.MountHealthBar.height(),
-            MM_Sprites.FullSheet.width(), MM_Sprites.FullSheet.height()
+            calculatedSprite
         );
 
         if (shouldShowHorseHpNumber()) {
-            var alpha = getHorseHpNumbersAlpha();
-            final int threeBytes = 24;
+            int alpha = getHorseHpNumbersAlpha();
 
-            var orange = (alpha << threeBytes) | 0xD65410;
-            guiGraphics.drawString(gui.getFont(), String.valueOf(health), xRef + 3, yRef + 6, orange, true);
+            int orange = (alpha << threeBytes) | BrightOrange.getRGB();
+            guiGraphics.drawString(DefaultFont, String.valueOf(health), xRef + 3, yRef + 6, orange, true);
 
-            var hpWidth = gui.getFont().width(String.valueOf(health)) + 3;
-            var gray = (alpha << threeBytes) | 0x5C5C5C;
-            guiGraphics.drawString(gui.getFont(), "/" + maxHealth, xRef + hpWidth, yRef + 6, gray, true);
+            int hpWidth = DefaultFont.width(String.valueOf(health)) + 3;
+            int gray = (alpha << threeBytes) | MediumGray.getRGB();
+            guiGraphics.drawString(DefaultFont, "/" + maxHealth, xRef + hpWidth, yRef + 6, gray, true);
         }
     }
 
     private static boolean shouldShowHorseHpNumber() {
-        var now = Instant.now();
-        var toShow = now.isBefore(PlayerMountData.getWhenPlayerMounted().plus(horseHpNumbersShowTime));
+        Instant now = Instant.now();
+        boolean toShow = now.isBefore(PlayerMountData.getWhenPlayerMounted().plus(horseHpNumbersShowTime));
         if (toShow) return true;
 
         return PlayerMountData.getWhenMountDamagedWhileRiding() != null
@@ -358,7 +353,7 @@ public class MinimalModernOverlay {
     }
 
     private static int getHorseHpNumbersAlpha() {
-        var now = Instant.now();
+        Instant now = Instant.now();
         // Short Time after Player has mounted
         if (now.isBefore(PlayerMountData.getWhenPlayerMounted().plus(horseHpNumbersSolidSeconds))) {
             return 255;
@@ -367,7 +362,7 @@ public class MinimalModernOverlay {
         // Short Time after Mount took damage
         if (
             PlayerMountData.getWhenMountDamagedWhileRiding() != null
-                && now.isBefore(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersSolidSeconds))
+            && now.isBefore(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersSolidSeconds))
         ) {
             return  255;
         }
@@ -381,7 +376,7 @@ public class MinimalModernOverlay {
         // After initial delay, start fading (after mount took damage)
         if (
             PlayerMountData.getWhenMountDamagedWhileRiding() != null
-                && now.isBefore(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersShowTime))
+            && now.isBefore(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersShowTime))
         ) {
             var elapsedSinceDamaged = Duration.between(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersSolidSeconds), now);
             return calculateAlpha(elapsedSinceDamaged, horseHpNumbersFadeSeconds);
@@ -391,49 +386,15 @@ public class MinimalModernOverlay {
     }
 
     private static int calculateAlpha(Duration elapsedTime, Duration totalDuration) {
-        var fade = (double)elapsedTime.toNanos() / totalDuration.toNanos() * 255D;
+        double fade = (double)elapsedTime.toNanos() / totalDuration.toNanos() * 255D;
         return Math.max(255 - (int)fade, 25);
     }
 
-
-    private static void _renderItemWithScale(ForgeGui gui, GuiGraphics guiGraphics, LocalPlayer player, ItemStack itemStack, int x, int y, float scaleFactor) {
-        _renderItemWithScale(gui.getMinecraft(), guiGraphics.bufferSource(), guiGraphics.pose(), player, gui.getMinecraft().level, itemStack, x, y, scaleFactor);
-    }
-
-    private static void _renderItemWithScale(
-        Minecraft minecraft, MultiBufferSource.BufferSource bufferSource, PoseStack pose, LivingEntity pEntity, Level pLevel,
-        ItemStack pStack, int pX, int pY, float scaleFactor
-    ) {
-        if (!pStack.isEmpty()) {
-            BakedModel bakedmodel = minecraft.getItemRenderer().getModel(pStack, pLevel, pEntity, 0);
-            pose.pushPose();
-            pose.translate((float)(pX + 8), (float)(pY + 8), (float)(150));
-
-            pose.mulPoseMatrix((new Matrix4f()).scaling(1.0F, -1.0F, 1.0F));
-
-            final float adjustedScale = 16.0F * scaleFactor;
-
-            //pose.scale(16.0F, 16.0F, 16.0F);
-            pose.scale(adjustedScale, adjustedScale, adjustedScale);
-
-            boolean flag = !bakedmodel.usesBlockLight();
-            if (flag) {
-                Lighting.setupForFlatItems();
-            }
-
-            minecraft.getItemRenderer().render(pStack, ItemDisplayContext.GUI, false, pose, bufferSource, 15728880, OverlayTexture.NO_OVERLAY, bakedmodel);
-
-            //this.flush();
-            RenderSystem.disableDepthTest();
-            bufferSource.endBatch();
-            RenderSystem.enableDepthTest();
-
-
-            if (flag) {
-                Lighting.setupFor3DItems();
-            }
-
-            pose.popPose();
-        }
+    private static void renderItemWithScale(GuiGraphics guiGraphics, ItemStack itemStack, int x, int y, float scaleFactor) {
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(x, y);
+        guiGraphics.pose().scale(scaleFactor, scaleFactor);
+        guiGraphics.renderItem(itemStack, 0, 0);
+        guiGraphics.pose().popMatrix();
     }
 }

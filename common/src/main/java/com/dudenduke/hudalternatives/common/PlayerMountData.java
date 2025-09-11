@@ -15,7 +15,6 @@ public class PlayerMountData {
     private static float mountMaxHealth = -1;
     private static Instant whenMountDamagedWhileRiding = null;
 
-
     public static boolean isPlayerMounted() { return isPlayerMounted; }
     public static boolean wasPreviouslyRidingMount() { return whenPlayerMounted != null; }
     public static Instant getWhenPlayerMounted() { return whenPlayerMounted; }
@@ -25,7 +24,7 @@ public class PlayerMountData {
     public static float getMountMaxHealth() { return mountMaxHealth; }
     public static Instant getWhenMountDamagedWhileRiding() { return whenMountDamagedWhileRiding; }
 
-    public static void updateMountData(LocalPlayer player) {
+    public static void updateMountData(LocalPlayer player){
         var vehicle = player.getVehicle();
 
         if (vehicle instanceof LivingEntity mob) {
@@ -57,7 +56,7 @@ public class PlayerMountData {
     }
 
     public static LivingVehicleType getMountType(LivingEntity mob) {
-        var translationKey = mob.getName().toString();
+        String translationKey = mob.getName().toString();
 
         List<Pair<String, LivingVehicleType>> sourcesToEnumMap = List.of(
             Pair.of("entity.minecraft.horse", LivingVehicleType.Horse),
@@ -78,5 +77,3 @@ public class PlayerMountData {
         return LivingVehicleType.Unknown;
     }
 }
-
-
