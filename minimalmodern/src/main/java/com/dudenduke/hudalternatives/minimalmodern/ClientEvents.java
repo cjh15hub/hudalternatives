@@ -1,7 +1,6 @@
 package com.dudenduke.hudalternatives.minimalmodern;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -30,8 +29,7 @@ public class ClientEvents {
     @SubscribeEvent
     static void onRegisterGuiOverlay(RegisterGuiLayersEvent event){
 
-        event.registerAbove(VanillaGuiLayers.HOTBAR, Constants.HUD_RESOURCE, MinimalModernOverlay::render);
-        // event.registerAboveAll(Constants.HUD_RESOURCE, MinimalModernOverlay::render);
+        event.registerAbove(VanillaGuiLayers.HOTBAR, MinimalModernOverlay.MINIMAL_MODERN, MinimalModernOverlay::render);
     }
 
     @SubscribeEvent

@@ -11,3 +11,4 @@ plugins {
 rootProject.name = 'hud-alternatives'
 include 'common'
 include 'minimalmodern'
+include 'deviljars'

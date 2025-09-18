@@ -6,7 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -15,7 +14,8 @@ import java.time.Duration;
 import java.time.Instant;
 
 public class MinimalModernOverlay {
-    private static final ResourceLocation MINIMAL_MODERN = ResourceLocation.fromNamespaceAndPath(Constants.MODID, "textures/minimal_modern.png");
+    public static final ResourceLocation MINIMAL_MODERN = ResourceLocation.fromNamespaceAndPath(Constants.MODID, "textures/minimal_modern.png");
+    private static final SpriteSheetHelper _spriteSheetHelper = new SpriteSheetHelper(MINIMAL_MODERN, MM_Sprites.FullSheet.dimensions());
 
     private static final Duration horseHpNumbersSolidSeconds = Duration.ofMillis(1500);
     private static final Duration horseHpNumbersFadeSeconds = Duration.ofMillis(1500);
@@ -119,56 +119,39 @@ public class MinimalModernOverlay {
         };
     }
 
-    /**
-     * Helper Method to blit
-     * @param guiGraphics graphics instance
-     * @param screenX screen x point to draw sprite
-     * @param screenY screen y point to draw sprite
-     * @param sprite sprite to render from MINIMAL_MODERN
-     */
-    private static void blitFromMainSpriteSheet(GuiGraphics guiGraphics, int screenX, int screenY, Sprite sprite) {
-        // argument order has changed across versions
-        // BEWARE guiGraphics.blit(...) overloads DO NOT accept params x, y, u, v, etc. in the same order!
-        // Could not figure out issues with guiGraphics.blitSprite(...)
-
-        guiGraphics.blit(
-            RenderPipelines.GUI_TEXTURED,
-            MINIMAL_MODERN,
-            screenX,
-            screenY,
-            sprite.u(),
-            sprite.v(),
-            sprite.width(),
-            sprite.height(),
-            MM_Sprites.FullSheet.width(),
-            MM_Sprites.FullSheet.height()
+    private static void renderMainHex(GuiGraphics guiGraphics, Vector2 anchor) {
+        _spriteSheetHelper.blitSprite(
+            guiGraphics,
+            anchor,
+            MM_Sprites.LargeHex
         );
     }
 
-    /**
-     * Helper method to blit
-     * @param guiGraphics graphics instance
-     * @param point screen point to draw sprite
-     * @param sprite sprite to render from MINIMAL_MODERN
-     */
-    private static void blitFromMainSpriteSheet(GuiGraphics guiGraphics, Vector2 point, Sprite sprite) {
-        blitFromMainSpriteSheet(guiGraphics, point.x(), point.y(), sprite);
-    }
-
-    private static void renderMainHex(GuiGraphics guiGraphics, Vector2 anchor) {
-        blitFromMainSpriteSheet(guiGraphics, anchor, MM_Sprites.LargeHex);
-    }
-
     private static void renderValueBarsBackground(GuiGraphics guiGraphics, Vector2 anchor) {
-        blitFromMainSpriteSheet(guiGraphics, anchor.x() + 31, anchor.y() + 11, MM_Sprites.ValueBarsBackground);
+        _spriteSheetHelper.blitSprite(
+            guiGraphics,
+            anchor.x() + 31,
+            anchor.y() + 11,
+            MM_Sprites.ValueBarsBackground
+        );
     }
 
     private static void renderHotbarHexes(GuiGraphics guiGraphics, Vector2 anchor) {
         // top left
-        blitFromMainSpriteSheet(guiGraphics, anchor.x() - 9, anchor.y() - 18, MM_Sprites.SmallHex);
+        _spriteSheetHelper.blitSprite(
+            guiGraphics,
+            anchor.x() - 9,
+            anchor.y() - 18,
+            MM_Sprites.SmallHex
+        );
 
         // bottom right
-        blitFromMainSpriteSheet(guiGraphics, anchor.x() + 20, anchor.y() + 30, MM_Sprites.SmallHex);
+        _spriteSheetHelper.blitSprite(
+            guiGraphics,
+            anchor.x() + 20,
+            anchor.y() + 30,
+            MM_Sprites.SmallHex
+        );
     }
 
     private static void renderExperienceLevel(GuiGraphics guiGraphics, Vector2 mainAnchor, int experienceLevel) {
@@ -202,28 +185,26 @@ public class MinimalModernOverlay {
             : (healthState == SurvivalPlayerSnapshot.Effect.POISONED) ? MM_Sprites.PoisonedHealthBar
             : MM_Sprites.MainHealthBar;
 
-        final int renderedWidth = ((int)(healthBarSprite.width() * (health / maxHealth)));
-        Sprite calculatedSprite = Sprite.SubSpriteWidth(healthBarSprite, renderedWidth);
-
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitMeter(
             guiGraphics,
             mainAnchor.x() + 32,
             mainAnchor.y() + 12,
-            calculatedSprite
+            healthBarSprite,
+            (health / maxHealth),
+            SpriteSheetHelper.FillDirection.LeftToRight
         );
     }
 
     private static void renderGoldenHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float absorption) {
         float maxAbsorption = 20f;
-        final int renderedWidth = ((int)(MM_Sprites.GoldenHealthBar.width() * (absorption / maxAbsorption)));
 
-        Sprite calculatedSprite = Sprite.SubSpriteWidth(MM_Sprites.GoldenHealthBar, renderedWidth);
-
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitMeter(
             guiGraphics,
             mainAnchor.x() + 32,
             mainAnchor.y() + 14,
-            calculatedSprite
+            MM_Sprites.GoldenHealthBar,
+            (absorption / maxAbsorption),
+            SpriteSheetHelper.FillDirection.LeftToRight
         );
     }
 
@@ -232,53 +213,41 @@ public class MinimalModernOverlay {
             ? MM_Sprites.PoisonedHungerBar
             : MM_Sprites.MainHungerBar;
 
-        final int renderedWidth = ((int)(hungerBarSprite.width() * (foodLevel / maxFoodLevel)));
-        Sprite calculatedSprite = Sprite.SubSpriteWidth(hungerBarSprite, renderedWidth);
-
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitMeter(
             guiGraphics,
             mainAnchor.x() + 32,
             mainAnchor.y() + 20,
-            calculatedSprite
+            hungerBarSprite,
+            (foodLevel / maxFoodLevel),
+            SpriteSheetHelper.FillDirection.LeftToRight
         );
     }
 
     private static void renderFoodSaturationBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float saturation, float maxFoodLevel) {
-        final int renderedWidth = ((int)(MM_Sprites.SaturationHungerBar.width() * (saturation / maxFoodLevel)));
-        Sprite calculatedSprite = Sprite.SubSpriteWidth(MM_Sprites.SaturationHungerBar, renderedWidth);
-
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitMeter(
             guiGraphics,
             mainAnchor.x() + 32,
             mainAnchor.y() + 24,
-            calculatedSprite
+            MM_Sprites.SaturationHungerBar,
+            (saturation / maxFoodLevel),
+            SpriteSheetHelper.FillDirection.LeftToRight
         );
     }
 
     private static void renderDrowningBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float drowningPercent) {
-        int removedSpriteHeight = MM_Sprites.DrowningHexSprite.height() - ((int)(MM_Sprites.DrowningHexSprite.height() * drowningPercent ));
-        int spriteStartY = removedSpriteHeight + MM_Sprites.DrowningHexSprite.v();
-        int spriteHeightRemaining = MM_Sprites.DrowningHexSprite.height() - removedSpriteHeight;
-
-        Sprite calculatedSprite = new Sprite(
-            MM_Sprites.DrowningHexSprite.u(),
-            spriteStartY,
-            MM_Sprites.DrowningHexSprite.width(),
-            spriteHeightRemaining
-        );
-
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitMeter(
             guiGraphics,
             mainAnchor.x() + 1,
-            mainAnchor.y() + 1 + removedSpriteHeight,
-            calculatedSprite
+            mainAnchor.y() + 1,
+            MM_Sprites.DrowningHexSprite,
+            drowningPercent,
+            SpriteSheetHelper.FillDirection.BottomToTop
         );
     }
 
-
     private static void renderMountHex(GuiGraphics guiGraphics, Vector2 anchor, LivingVehicleType mountType) {
         // top right
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitSprite(
             guiGraphics,
             anchor.x() + 19,
             anchor.y() - 18,
@@ -294,10 +263,9 @@ public class MinimalModernOverlay {
             case Skeleton_horse -> MM_Sprites.Skeleton_Horse;
             case Strider -> MM_Sprites.Strider;
             case Unknown -> MM_Sprites.Horse_Silhouette;
-            default -> MM_Sprites.Horse_Silhouette;
         };
 
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitSprite(
             guiGraphics,
             anchor.x() + 20,
             anchor.y() - 16,
@@ -314,21 +282,20 @@ public class MinimalModernOverlay {
             yRef = mainAnchor.y() + 26;
         }
 
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitSprite(
             guiGraphics,
             xRef,
             yRef,
             MM_Sprites.MountHealthBackground
         );
 
-        final int renderedWidth = ((int)(MM_Sprites.MountHealthBar.width() * (health / maxHealth)));
-        Sprite calculatedSprite = Sprite.SubSpriteWidth(MM_Sprites.MountHealthBar, renderedWidth);
-
-        blitFromMainSpriteSheet(
+        _spriteSheetHelper.blitMeter(
             guiGraphics,
-            xRef + 1,
-            yRef + 1,
-            calculatedSprite
+            mainAnchor.x() + 1,
+            mainAnchor.y() + 1,
+            MM_Sprites.MountHealthBar,
+            (health / maxHealth),
+            SpriteSheetHelper.FillDirection.LeftToRight
         );
 
         if (shouldShowHorseHpNumber()) {
