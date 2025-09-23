@@ -3,7 +3,6 @@ package com.dudenduke.hudalternatives.common.graphics;
 import com.dudenduke.hudalternatives.common.numerics.Dimensions;
 import com.dudenduke.hudalternatives.common.numerics.Vector2;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
 
 public class SpriteSheetHelper {
@@ -36,7 +35,6 @@ public class SpriteSheetHelper {
         // Could not figure out issues with guiGraphics.blitSprite(...)
 
         guiGraphics.blit(
-            RenderPipelines.GUI_TEXTURED,
             SpriteSheet,
             screenX,
             screenY,
@@ -94,7 +92,6 @@ public class SpriteSheetHelper {
         final int renderedWidth = ((int)(sprite.width() * valuePercent));
 
         guiGraphics.blit(
-            RenderPipelines.GUI_TEXTURED,
             SpriteSheet,
             screenX,
             screenY,
@@ -113,7 +110,6 @@ public class SpriteSheetHelper {
         int spriteWidthRemaining = sprite.width() - removedSpriteWidth;
 
         guiGraphics.blit(
-            RenderPipelines.GUI_TEXTURED,
             SpriteSheet,
             screenX + removedSpriteWidth,
             screenY,
@@ -130,7 +126,6 @@ public class SpriteSheetHelper {
         final int renderedHeight = ((int)(sprite.height() * valuePercent));
 
         guiGraphics.blit(
-            RenderPipelines.GUI_TEXTURED,
             SpriteSheet,
             screenX,
             screenY,
@@ -149,7 +144,6 @@ public class SpriteSheetHelper {
         int spriteHeightRemaining = sprite.height() - removedSpriteHeight;
 
         guiGraphics.blit(
-            RenderPipelines.GUI_TEXTURED,
             SpriteSheet,
             screenX,
             screenY + removedSpriteHeight,

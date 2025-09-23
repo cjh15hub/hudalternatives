@@ -48,7 +48,7 @@ public class SurvivalPlayerSnapshot {
 
         mainHandItem = player.getMainHandItem();
 
-        int currentlySelectedHotbarIndex = player.getInventory().getSelectedSlot();
+        int currentlySelectedHotbarIndex = player.getInventory().selected;
         if (SurvivalPlayerEvent.lastSelectedHotbarIndex() != -1 && currentlySelectedHotbarIndex != SurvivalPlayerEvent.lastSelectedHotbarIndex()) {
             SurvivalPlayerEvent.setLastItemSlotChangedInstant();
         }

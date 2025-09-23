@@ -65,8 +65,7 @@ public class ClientEvents {
         }
         else if (
             // XP or Horse Jump meter layers
-            event.getName().equals(MC_ResourceLocations.ContextualInfoBarGuiLayer)
-            || event.getName().equals(MC_ResourceLocations.ContextualInfoBarBgGuiLayer)
+            event.getName().equals(MC_ResourceLocations.XPBarGuiLayer)
         ) {
             final LocalPlayer player = Minecraft.getInstance().player;
             if (player == null) return;

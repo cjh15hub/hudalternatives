@@ -13,4 +13,7 @@ public class MC_ResourceLocations {
 
     public static final ResourceLocation ContextualInfoBarGuiLayer = ResourceLocation.fromNamespaceAndPath("minecraft", "contextual_info_bar");
     public static final ResourceLocation ContextualInfoBarBgGuiLayer = ResourceLocation.fromNamespaceAndPath("minecraft", "contextual_info_bar_background");
+
+    public static final ResourceLocation XPBarGuiLayer = ResourceLocation.fromNamespaceAndPath("minecraft", "experience_bar");
+    public static final ResourceLocation JumpMeterGuiLayer = ResourceLocation.fromNamespaceAndPath("minecraft", "jump_meter");
 }
