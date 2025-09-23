@@ -68,7 +68,7 @@ public class HotbarHelpers {
 
     private static int findNextWeaponOfTypeInHotbar(LocalPlayer player, WeaponType weaponType) {
         final ItemStack[] hotbar = getHotbar(player);
-        final int selectedHotbarIndex = player.getInventory().selected;
+        final int selectedHotbarIndex = player.getInventory().getSelectedSlot();
         int nextWeaponIndex = -1;
 
         int startingIndex = 0;

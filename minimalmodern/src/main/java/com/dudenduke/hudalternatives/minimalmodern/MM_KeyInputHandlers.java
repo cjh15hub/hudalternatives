@@ -32,8 +32,8 @@ public class MM_KeyInputHandlers {
         if (player == null) return;
 
         int nextWeaponIndex = HotbarHelpers.findNextMeleeWeaponInHotbar(player);
-        if (nextWeaponIndex != -1 && nextWeaponIndex != player.getInventory().selected) {
-            player.getInventory().selected = (nextWeaponIndex);
+        if (nextWeaponIndex != -1 && nextWeaponIndex != player.getInventory().getSelectedSlot()) {
+            player.getInventory().setSelectedSlot(nextWeaponIndex);
             player.playSound(SoundEvents.IRON_TRAPDOOR_CLOSE, 0.6f, 1.5f);
         }
         else if (!WeaponUtils.isMeleeWeapon(player.getMainHandItem())) {
@@ -45,8 +45,8 @@ public class MM_KeyInputHandlers {
         if (player == null) return;
 
         int nextWeaponIndex = HotbarHelpers.findNextRangedWeaponInHotbar(player);
-        if (nextWeaponIndex != -1 && nextWeaponIndex != player.getInventory().selected) {
-            player.getInventory().selected = (nextWeaponIndex);
+        if (nextWeaponIndex != -1 && nextWeaponIndex != player.getInventory().getSelectedSlot()) {
+            player.getInventory().setSelectedSlot(nextWeaponIndex);
             player.playSound(SoundEvents.WOOL_BREAK, 0.6f, 1.5f);
         }
         else if (!WeaponUtils.isRangedWeapon(player.getMainHandItem())) {
@@ -58,8 +58,8 @@ public class MM_KeyInputHandlers {
         if (player == null) return;
 
         int correctToolIndex = HotbarHelpers.findCorrectToolInHotbar(player);
-        if (correctToolIndex != -1 && correctToolIndex != player.getInventory().selected) {
-            player.getInventory().selected = (correctToolIndex);
+        if (correctToolIndex != -1 && correctToolIndex != player.getInventory().getSelectedSlot()) {
+            player.getInventory().setSelectedSlot(correctToolIndex);
             player.playSound(SoundEvents.WOOL_BREAK, 0.6f, 1.5f);
         }
         else if (correctToolIndex == -1) {
