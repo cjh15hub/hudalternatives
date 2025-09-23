@@ -1,5 +1,6 @@
 package com.dudenduke.hudalternatives.deviljars;
 
+import com.dudenduke.hudalternatives.common.graphics.MC_ResourceLocations;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -27,8 +28,8 @@ public class ClientEvents {
 
     @SubscribeEvent
     static void onRegisterGuiOverlay(RegisterGuiLayersEvent event) {
-        event.replaceLayer(ResourceLocation.fromNamespaceAndPath("minecraft", "player_health"), DevilJarsHudOverlay::emptyRender);
-        event.replaceLayer(ResourceLocation.fromNamespaceAndPath("minecraft", "food_level"), DevilJarsHudOverlay::emptyRender);
+        event.replaceLayer(MC_ResourceLocations.HealthGuiLayer, DevilJarsHudOverlay::emptyRender);
+        event.replaceLayer(MC_ResourceLocations.FoodGuiLayer, DevilJarsHudOverlay::emptyRender);
 
         event.registerBelow(VanillaGuiLayers.HOTBAR, DevilJarsHudOverlay.DEVIL_JARS, DevilJarsHudOverlay::render);
     }
