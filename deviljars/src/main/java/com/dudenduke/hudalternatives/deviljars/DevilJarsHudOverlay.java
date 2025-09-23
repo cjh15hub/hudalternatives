@@ -82,7 +82,7 @@ public class DevilJarsHudOverlay {
     }
 
     private static void renderGoldenHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float absorption) {
-        float maxAbsorption = 20f;
+        float maxAbsorption = 18f;
 
         _spriteSheetHelper.blitMeter(
             guiGraphics,
