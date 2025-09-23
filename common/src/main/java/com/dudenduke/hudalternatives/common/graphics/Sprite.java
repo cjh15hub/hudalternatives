@@ -1,4 +1,7 @@
-package com.dudenduke.hudalternatives.common;
+package com.dudenduke.hudalternatives.common.graphics;
+
+import com.dudenduke.hudalternatives.common.numerics.Dimensions;
+import com.dudenduke.hudalternatives.common.numerics.Vector2;
 
 public class Sprite {
 

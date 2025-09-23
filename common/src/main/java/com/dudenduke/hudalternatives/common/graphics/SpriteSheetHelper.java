@@ -1,5 +1,7 @@
-package com.dudenduke.hudalternatives.common;
+package com.dudenduke.hudalternatives.common.graphics;
 
+import com.dudenduke.hudalternatives.common.numerics.Dimensions;
+import com.dudenduke.hudalternatives.common.numerics.Vector2;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;

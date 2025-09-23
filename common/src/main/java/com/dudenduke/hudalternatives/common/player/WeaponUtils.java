@@ -1,6 +1,7 @@
-package com.dudenduke.hudalternatives.common;
+package com.dudenduke.hudalternatives.common.player;
 
-import net.minecraft.world.item.*;
+import com.dudenduke.hudalternatives.common.ModTags;
+import net.minecraft.world.item.ItemStack;
 
 public class WeaponUtils {
 

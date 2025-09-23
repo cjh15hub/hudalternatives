@@ -1,21 +1,28 @@
 package com.dudenduke.hudalternatives.minimalmodern;
 
-import com.dudenduke.hudalternatives.common.*;
+import com.dudenduke.hudalternatives.common.graphics.SpriteSheetHelper;
+import com.dudenduke.hudalternatives.common.graphics.Sprite;
+import com.dudenduke.hudalternatives.common.numerics.Vector2;
+import com.dudenduke.hudalternatives.common.numerics.Dimensions;
+import com.dudenduke.hudalternatives.common.player.HotbarHelpers;
+import com.dudenduke.hudalternatives.common.player.LivingVehicleType;
+import com.dudenduke.hudalternatives.common.player.PlayerMountEvent;
+import com.dudenduke.hudalternatives.common.player.PlayerMountSnapshot;
+import com.dudenduke.hudalternatives.common.player.SurvivalPlayerSnapshot;
+
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-import java.awt.*;
+import java.awt.Color;
 import java.time.Duration;
 import java.time.Instant;
 
 public class MinimalModernOverlay {
-    public static final ResourceLocation MINIMAL_MODERN = ResourceLocation.fromNamespaceAndPath(Constants.MODID, "textures/minimal_modern.png");
-    private static final SpriteSheetHelper _spriteSheetHelper = new SpriteSheetHelper(MINIMAL_MODERN, MM_Sprites.FullSheet.dimensions());
+    private static final SpriteSheetHelper _spriteSheetHelper = new SpriteSheetHelper(MM_ResourceLocations.MinimalModernGuiLayer, MM_Sprites.FullSheet.dimensions());
 
     private static final Duration horseHpNumbersSolidSeconds = Duration.ofMillis(1500);
     private static final Duration horseHpNumbersFadeSeconds = Duration.ofMillis(1500);
@@ -26,7 +33,10 @@ public class MinimalModernOverlay {
     private static final Color SteelBlue = new Color(0, 141, 184);
     private static final Color BrightOrange = new Color(214, 84, 16);
     private static final Color MediumGray = new Color(92, 92, 92);
-    private static final int threeBytes = 24;
+
+    public static void emptyRender(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        return;
+    }
 
     public static void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         final LocalPlayer player = Minecraft.getInstance().player;
@@ -34,10 +44,11 @@ public class MinimalModernOverlay {
 
         int screenWidth = guiGraphics.guiWidth();
         int screenHeight = guiGraphics.guiHeight();
-
         final Dimensions screenDims = new Dimensions(screenWidth, screenHeight);
+
         SurvivalPlayerSnapshot playerSnapshot = new SurvivalPlayerSnapshot(player);
-        PlayerMountData.updateMountData(player);
+        PlayerMountSnapshot mountSnapshot = new PlayerMountSnapshot(player);
+        PlayerMountEvent.UpdatePlayerMountEvent(player);
 
         // Standard reference point for all gui elements
         Vector2 mainScreenAnchor = getMainScreenAnchorPoint(screenDims, MM_Configuration.MainGuiDrawCorner());
@@ -76,13 +87,13 @@ public class MinimalModernOverlay {
         renderDrowningBar(guiGraphics, mainScreenAnchor, playerSnapshot.drownPercentage);
 
         // Player Riding Mount
-        if (PlayerMountData.isPlayerMounted() && PlayerMountData.getMountType() != null) {
-            renderMountHex(guiGraphics, mainScreenAnchor, PlayerMountData.getMountType());
+        if (mountSnapshot.isPlayerMounted()) {
+            renderMountHex(guiGraphics, mainScreenAnchor, mountSnapshot.getMountType());
 
             Vector2 mountHealthBarAnchorPoint = (!separatedBars)
                 ? mainScreenAnchor
                 : getSeparatedValueBarsAnchorPoint(screenDims, MM_Configuration.ValueBarsDrawCorner());
-            renderMountHealthBar(guiGraphics, mountHealthBarAnchorPoint, separatedBars, PlayerMountData.getMountHealth(), PlayerMountData.getMountMaxHealth());
+            renderMountHealthBar(guiGraphics, mountHealthBarAnchorPoint, separatedBars, mountSnapshot.getMountHealth(), mountSnapshot.getMountMaxHealth());
         }
         else {
             renderExperienceLevel(guiGraphics, mainScreenAnchor, playerSnapshot.experienceLevel);
@@ -169,7 +180,7 @@ public class MinimalModernOverlay {
     }
 
     private static void renderAdjacentItems(GuiGraphics guiGraphics, SurvivalPlayerSnapshot player, Vector2 mainAnchor) {
-        ItemStack[] hotbar = player.getHotbar();
+        ItemStack[] hotbar = HotbarHelpers.getHotbar(player.localPlayer);
         ItemStack leftItem =  hotbar[Math.floorMod(player.selectedHotbarIndex - 1, 9)];
         ItemStack rightItem = hotbar[Math.floorMod(player.selectedHotbarIndex + 1, 9)];
 
@@ -291,8 +302,8 @@ public class MinimalModernOverlay {
 
         _spriteSheetHelper.blitMeter(
             guiGraphics,
-            mainAnchor.x() + 1,
-            mainAnchor.y() + 1,
+            xRef + 1,
+            yRef + 1,
             MM_Sprites.MountHealthBar,
             (health / maxHealth),
             SpriteSheetHelper.FillDirection.LeftToRight
@@ -301,51 +312,51 @@ public class MinimalModernOverlay {
         if (shouldShowHorseHpNumber()) {
             int alpha = getHorseHpNumbersAlpha();
 
-            int orange = (alpha << threeBytes) | BrightOrange.getRGB();
-            guiGraphics.drawString(DefaultFont, String.valueOf(health), xRef + 3, yRef + 6, orange, true);
+            Color orange = new Color(BrightOrange.getRed(), BrightOrange.getGreen(), BrightOrange.getBlue(), alpha);
+            guiGraphics.drawString(DefaultFont, String.valueOf(health), xRef + 3, yRef + 6, orange.getRGB(), true);
 
             int hpWidth = DefaultFont.width(String.valueOf(health)) + 3;
-            int gray = (alpha << threeBytes) | MediumGray.getRGB();
-            guiGraphics.drawString(DefaultFont, "/" + maxHealth, xRef + hpWidth, yRef + 6, gray, true);
+            Color gray = new Color(MediumGray.getRed(), MediumGray.getGreen(), MediumGray.getBlue(), alpha);
+            guiGraphics.drawString(DefaultFont, "/" + maxHealth, xRef + hpWidth, yRef + 6, gray.getRGB(), true);
         }
     }
 
     private static boolean shouldShowHorseHpNumber() {
         Instant now = Instant.now();
-        boolean toShow = now.isBefore(PlayerMountData.getWhenPlayerMounted().plus(horseHpNumbersShowTime));
+        boolean toShow = now.isBefore(PlayerMountEvent.whenPlayerMounted().plus(horseHpNumbersShowTime));
         if (toShow) return true;
 
-        return PlayerMountData.getWhenMountDamagedWhileRiding() != null
-            && now.isBefore(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersShowTime));
+        return PlayerMountEvent.whenMountDamagedWhileRiding() != null
+            && now.isBefore(PlayerMountEvent.whenMountDamagedWhileRiding().plus(horseHpNumbersShowTime));
     }
 
     private static int getHorseHpNumbersAlpha() {
         Instant now = Instant.now();
         // Short Time after Player has mounted
-        if (now.isBefore(PlayerMountData.getWhenPlayerMounted().plus(horseHpNumbersSolidSeconds))) {
+        if (now.isBefore(PlayerMountEvent.whenPlayerMounted().plus(horseHpNumbersSolidSeconds))) {
             return 255;
         }
 
         // Short Time after Mount took damage
         if (
-            PlayerMountData.getWhenMountDamagedWhileRiding() != null
-            && now.isBefore(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersSolidSeconds))
+            PlayerMountEvent.whenMountDamagedWhileRiding() != null
+            && now.isBefore(PlayerMountEvent.whenMountDamagedWhileRiding().plus(horseHpNumbersSolidSeconds))
         ) {
             return  255;
         }
 
         // After initial delay, start fading (after mounting)
-        if (now.isBefore(PlayerMountData.getWhenPlayerMounted().plus(horseHpNumbersShowTime))) {
-            var elapsedSinceMounted = Duration.between(PlayerMountData.getWhenPlayerMounted().plus(horseHpNumbersSolidSeconds), now);
+        if (now.isBefore(PlayerMountEvent.whenPlayerMounted().plus(horseHpNumbersShowTime))) {
+            var elapsedSinceMounted = Duration.between(PlayerMountEvent.whenPlayerMounted().plus(horseHpNumbersSolidSeconds), now);
             return calculateAlpha(elapsedSinceMounted, horseHpNumbersFadeSeconds);
         }
 
         // After initial delay, start fading (after mount took damage)
         if (
-            PlayerMountData.getWhenMountDamagedWhileRiding() != null
-            && now.isBefore(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersShowTime))
+            PlayerMountEvent.whenMountDamagedWhileRiding() != null
+            && now.isBefore(PlayerMountEvent.whenMountDamagedWhileRiding().plus(horseHpNumbersShowTime))
         ) {
-            var elapsedSinceDamaged = Duration.between(PlayerMountData.getWhenMountDamagedWhileRiding().plus(horseHpNumbersSolidSeconds), now);
+            var elapsedSinceDamaged = Duration.between(PlayerMountEvent.whenMountDamagedWhileRiding().plus(horseHpNumbersSolidSeconds), now);
             return calculateAlpha(elapsedSinceDamaged, horseHpNumbersFadeSeconds);
         }
 

@@ -1,6 +1,11 @@
 package com.dudenduke.hudalternatives.deviljars;
 
-import com.dudenduke.hudalternatives.common.*;
+import com.dudenduke.hudalternatives.common.numerics.Vector2;
+import com.dudenduke.hudalternatives.common.numerics.Dimensions;
+import com.dudenduke.hudalternatives.common.graphics.Sprite;
+import com.dudenduke.hudalternatives.common.graphics.SpriteSheetHelper;
+import com.dudenduke.hudalternatives.common.player.SurvivalPlayerSnapshot;
+
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -11,6 +16,10 @@ public class DevilJarsHudOverlay {
 
     public static final ResourceLocation DEVIL_JARS = ResourceLocation.fromNamespaceAndPath(Constants.MODID, "textures/ender_golem_jars_sprite_sheet.png");
     private static final SpriteSheetHelper _spriteSheetHelper = new SpriteSheetHelper(DEVIL_JARS, DJ_Sprites.FullSheet.dimensions());
+
+    public static void emptyRender(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        return;
+    }
 
     public static void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         final LocalPlayer player = Minecraft.getInstance().player;
@@ -26,12 +35,14 @@ public class DevilJarsHudOverlay {
         Vector2 leftScreenAnchor = getLeftScreenAnchorPoint(screenDims);
         Vector2 rightScreenAnchor = getRightScreenAnchorPoint(screenDims);
 
+        renderHotbarConnector(guiGraphics, screenDims);
         renderHealthJar(guiGraphics, leftScreenAnchor, playerSnapshot.health, playerSnapshot.maxHealth, playerSnapshot.healthEffect);
+        renderGoldenHealthBar(guiGraphics, leftScreenAnchor, playerSnapshot.absorption);
         renderDragon(guiGraphics, leftScreenAnchor);
 
         renderIronGolem(guiGraphics, rightScreenAnchor);
         renderManaJar(guiGraphics, rightScreenAnchor, playerSnapshot.foodLevel, playerSnapshot.maxFoodLevel, playerSnapshot.hungerEffect);
-
+        renderSaturationBar(guiGraphics, rightScreenAnchor, playerSnapshot.saturation, playerSnapshot.maxFoodLevel);
     }
 
     private static Vector2 getLeftScreenAnchorPoint(Dimensions screen) {
@@ -55,8 +66,10 @@ public class DevilJarsHudOverlay {
             anchor.y(),
             DJ_Sprites.EmptyJar
         );
-        // TODO: update to get correct sprite based on SurvivalPlayerSnapshot.Effect(s)
-        Sprite healthBarSprite = DJ_Sprites.MainHealthBar;
+
+        Sprite healthBarSprite = (healthState == SurvivalPlayerSnapshot.Effect.WITHERED) ? DJ_Sprites.WitheredHealthBar
+            : (healthState == SurvivalPlayerSnapshot.Effect.POISONED) ? DJ_Sprites.PoisonedHealthBar
+            : DJ_Sprites.MainHealthBar;
 
         _spriteSheetHelper.blitMeter(
             guiGraphics,
@@ -68,6 +81,19 @@ public class DevilJarsHudOverlay {
         );
     }
 
+    private static void renderGoldenHealthBar(GuiGraphics guiGraphics, Vector2 mainAnchor, float absorption) {
+        float maxAbsorption = 20f;
+
+        _spriteSheetHelper.blitMeter(
+            guiGraphics,
+            mainAnchor.x() + 4,
+            mainAnchor.y() + 5,
+            DJ_Sprites.GoldenHealthBar,
+            (absorption / maxAbsorption),
+            SpriteSheetHelper.FillDirection.BottomToTop
+        );
+    }
+
     private static void renderManaJar(GuiGraphics guiGraphics, Vector2 anchor, float foodLevel, float maxFoodLevel, SurvivalPlayerSnapshot.Effect hungerState) {
         _spriteSheetHelper.blitSprite(
             guiGraphics,
@@ -75,8 +101,10 @@ public class DevilJarsHudOverlay {
             anchor.y(),
             DJ_Sprites.EmptyJar
         );
-        // TODO: update to get correct sprite based on SurvivalPlayerSnapshot.Effect(s)
-        Sprite manaBarSprite = DJ_Sprites.MainManaBar;
+
+        Sprite manaBarSprite = (hungerState == SurvivalPlayerSnapshot.Effect.HUNGERED)
+            ? DJ_Sprites.HungeredManaBar
+            : DJ_Sprites.MainManaBar;
 
         _spriteSheetHelper.blitMeter(
             guiGraphics,
@@ -84,6 +112,17 @@ public class DevilJarsHudOverlay {
             anchor.y() + 5,
             manaBarSprite,
             (foodLevel / maxFoodLevel),
+            SpriteSheetHelper.FillDirection.BottomToTop
+        );
+    }
+
+    private static void renderSaturationBar(GuiGraphics guiGraphics, Vector2 anchor, float saturation, float maxFoodLevel) {
+        _spriteSheetHelper.blitMeter(
+            guiGraphics,
+            anchor.x() + 4,
+            anchor.y() + 5,
+            DJ_Sprites.GoldenHealthBar,
+            (saturation / maxFoodLevel),
             SpriteSheetHelper.FillDirection.BottomToTop
         );
     }
@@ -103,6 +142,15 @@ public class DevilJarsHudOverlay {
             anchor.x() + DJ_Sprites.EmptyJar.width() - 6,
             anchor.y() - 10,
             DJ_Sprites.Golem
+        );
+    }
+
+    private static void renderHotbarConnector(GuiGraphics guiGraphics, Dimensions screenDims) {
+        _spriteSheetHelper.blitSprite(
+            guiGraphics,
+            (screenDims.width() / 2) - (DJ_Sprites.HotbarConnector.width() / 2),
+            screenDims.height() - (DJ_Sprites.HotbarConnector.height()),
+            DJ_Sprites.HotbarConnector
         );
     }
 }

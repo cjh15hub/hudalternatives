@@ -1,6 +1,7 @@
 package com.dudenduke.hudalternatives.deviljars;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -23,7 +24,10 @@ public class ClientEvents {
 
     @net.neoforged.bus.api.SubscribeEvent
     static void onRegisterGuiOverlay(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.HOTBAR, DevilJarsHudOverlay.DEVIL_JARS, DevilJarsHudOverlay::render);
+        event.replaceLayer(ResourceLocation.fromNamespaceAndPath("minecraft", "player_health"), DevilJarsHudOverlay::emptyRender);
+        event.replaceLayer(ResourceLocation.fromNamespaceAndPath("minecraft", "food_level"), DevilJarsHudOverlay::emptyRender);
+
+        event.registerBelow(VanillaGuiLayers.HOTBAR, DevilJarsHudOverlay.DEVIL_JARS, DevilJarsHudOverlay::render);
     }
 
     @net.neoforged.bus.api.SubscribeEvent

@@ -5,7 +5,7 @@ plugins {
     id 'idea'
 }
 
-version = mod_version
+version = mod_version + '-mc' + minecraft_version
 group = mod_group_id
 
 repositories {
@@ -13,7 +13,7 @@ repositories {
 }
 
 base {
-    archivesName = mod_id
+    archivesName = mod_group_id + '.' + mod_id
 }
 
 // Mojang ships Java 21 to end users in 1.21.8, so mods should target Java 21.
