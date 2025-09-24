@@ -371,7 +371,7 @@ public class MinimalModernOverlay {
     private static void renderItemWithScale(GuiGraphics guiGraphics, ItemStack itemStack, int x, int y, float scaleFactor) {
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(x, y, 0);
-        guiGraphics.pose().scale(scaleFactor, scaleFactor, scaleFactor);
+        guiGraphics.pose().scale(scaleFactor, scaleFactor, 1);
         guiGraphics.renderItem(itemStack, 0, 0);
         guiGraphics.pose().popPose();
     }
