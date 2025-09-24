@@ -10,6 +10,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -28,10 +29,18 @@ public class ClientEvents {
 
     @SubscribeEvent
     static void onRegisterGuiOverlay(RegisterGuiLayersEvent event) {
-        event.replaceLayer(MC_ResourceLocations.HealthGuiLayer, DevilJarsHudOverlay::emptyRender);
-        event.replaceLayer(MC_ResourceLocations.FoodGuiLayer, DevilJarsHudOverlay::emptyRender);
-
         event.registerBelow(VanillaGuiLayers.HOTBAR, DevilJarsHudOverlay.DEVIL_JARS, DevilJarsHudOverlay::render);
+    }
+
+    @SubscribeEvent
+    static void onRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
+        final ResourceLocation eventName = event.getName();
+        if (
+            eventName.equals(MC_ResourceLocations.HealthGuiLayer)
+            || eventName.equals(MC_ResourceLocations.FoodGuiLayer)
+        ) {
+            event.setCanceled(true);
+        }
     }
 
     @SubscribeEvent

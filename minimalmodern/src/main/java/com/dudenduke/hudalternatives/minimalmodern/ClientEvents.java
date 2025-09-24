@@ -6,6 +6,7 @@ import com.dudenduke.hudalternatives.common.player.SurvivalPlayerSnapshot;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -38,13 +39,6 @@ public class ClientEvents {
 
     @SubscribeEvent
     static void onRegisterGuiOverlay(RegisterGuiLayersEvent event) {
-        // Replace and remove vanilla gui layers
-        event.replaceLayer(MC_ResourceLocations.HealthGuiLayer, MinimalModernOverlay::emptyRender);
-        event.replaceLayer(MC_ResourceLocations.ArmorGuiLayer, MinimalModernOverlay::emptyRender);
-        event.replaceLayer(MC_ResourceLocations.FoodGuiLayer, MinimalModernOverlay::emptyRender);
-        event.replaceLayer(MC_ResourceLocations.VehicleGuiLayer, MinimalModernOverlay::emptyRender);
-        event.replaceLayer(MC_ResourceLocations.AirGuiLayer, MinimalModernOverlay::emptyRender);
-        event.replaceLayer(MC_ResourceLocations.XPGuiLayer, MinimalModernOverlay::emptyRender);
         // register our GUI layer
         event.registerAbove(VanillaGuiLayers.HOTBAR, MM_ResourceLocations.MinimalModernGuiLayer, MinimalModernOverlay::render);
     }
@@ -53,8 +47,19 @@ public class ClientEvents {
 
     @SubscribeEvent
     static void onRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
+        final ResourceLocation eventName = event.getName();
+        if (
+            eventName.equals(MC_ResourceLocations.HealthGuiLayer)
+            || eventName.equals(MC_ResourceLocations.ArmorGuiLayer)
+            || eventName.equals(MC_ResourceLocations.FoodGuiLayer)
+            || eventName.equals(MC_ResourceLocations.VehicleGuiLayer)
+            || eventName.equals(MC_ResourceLocations.AirGuiLayer)
+            || eventName.equals(MC_ResourceLocations.XPGuiLayer)
+        ) {
+            event.setCanceled(true);
+        }
         // Hotbar Gui layer
-        if (event.getName().equals(MC_ResourceLocations.HotbarGuiLayer)) {
+        else if (eventName.equals(MC_ResourceLocations.HotbarGuiLayer)) {
             // If recently changed equipment slot
             if (
                 SurvivalPlayerEvent.lastItemSlotChangedInstant() == null
@@ -65,7 +70,8 @@ public class ClientEvents {
         }
         else if (
             // XP or Horse Jump meter layers
-            event.getName().equals(MC_ResourceLocations.XPBarGuiLayer)
+            eventName.equals(MC_ResourceLocations.ContextualInfoBarGuiLayer)
+            || eventName.equals(MC_ResourceLocations.ContextualInfoBarBgGuiLayer)
         ) {
             final LocalPlayer player = Minecraft.getInstance().player;
             if (player == null) return;
