@@ -10,17 +10,11 @@ import net.minecraft.world.phys.HitResult;
 public class HotbarHelpers {
     private HotbarHelpers() {}
 
-    private static ItemStack[] _hotbar;
-    private static int _playerId;
-
     public static ItemStack[] getHotbar(LocalPlayer player) {
-        if (_hotbar != null && player.getId() == _playerId) return _hotbar;
         ItemStack[] hotbar = new ItemStack[9];
         for (int i = 0; i < hotbar.length; i++) {
             hotbar[i] = player.getInventory().getItem(i);
         }
-        _hotbar = hotbar;
-        _playerId = player.getId();
         return  hotbar;
     }
 
